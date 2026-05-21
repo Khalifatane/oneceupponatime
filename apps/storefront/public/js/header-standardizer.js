@@ -914,7 +914,7 @@
     if (!slides.length) return;
 
     try {
-      const sanityModule = await import("/src/services/sanity-service.ts");
+      const sanityModule = await import("@siggistore/services/storefront/sanity-service");
       const sanityProducts = await sanityModule.default.getProducts(slides.length, 0);
       if (!Array.isArray(sanityProducts) || !sanityProducts.length) return;
 
@@ -1611,7 +1611,7 @@
 
     if (!slug) return;
 
-    import("/src/services/sanity-service.ts")
+    import("@siggistore/services/storefront/sanity-service")
       .then(function (module) {
         if (!module || !module.sanityService || typeof module.sanityService.getProductBySlug !== "function") {
           return null;

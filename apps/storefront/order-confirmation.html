@@ -1,1299 +1,2593 @@
 
+
 <!DOCTYPE html>
+
 <html lang="en" class="relative iidaq light" data-theme="theme-olive" data-brand="avocado" data-font="sans">
+
 <head>
+
   <!-- Required Meta Tags Always Come First -->
+
   <meta charset="utf-8">
+
   <meta name="robots" content="max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+
   <link rel="canonical" href="https://preline.co/pro/templates.html">
+
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
   <meta name="description" content="Engaging shopping experiences with advanced product filters, detailed descriptions, easy checkout, and full account management.">
 
+
+
   <meta name="twitter:site" content="@preline">
+
   <meta name="twitter:creator" content="@preline">
+
   <meta name="twitter:card" content="summary_large_image">
+
   <meta name="twitter:title" content="Order Confirmation | Preline Pro">
+
   <meta name="twitter:description" content="Engaging shopping experiences with advanced product filters, detailed descriptions, easy checkout, and full account management.">
+
   <meta name="twitter:image" content="https://preline.co/assets/img/og-image.png">
 
+
+
   <meta property="og:url" content="https://preline.co/pro/templates.html">
+
   <meta property="og:locale" content="en_US">
+
   <meta property="og:type" content="website">
+
   <meta property="og:site_name" content="Preline">
+
   <meta property="og:title" content="Order Confirmation | Preline Pro">
+
   <meta property="og:description" content="Engaging shopping experiences with advanced product filters, detailed descriptions, easy checkout, and full account management.">
+
   <meta property="og:image" content="https://preline.co/assets/img/og-image.png">
 
+
+
   <!-- Title -->
+
   <title>Order Confirmation | Preline Pro</title>
 
+
+
   <!-- Favicon -->
+
   <link rel="shortcut icon" href="../../favicon.ico">
 
+
+
   <!-- Font -->
+
   <link href="/css/css2.css" rel="stylesheet">
 
+
+
   <!-- CSS HS -->
+
   <link href="/css/obfuscated.min.css" rel="stylesheet"/>
 
+
+
   <!-- Theme Check and Update -->
+
   <script src="/js/hs-unavailable-color-themes.js"></script>
+
   <script>
+
     function generateVariables(theme = "dashboard", brand = "blue") {
+
       const styleId = "#hs-brand-variables";
+
       let style = null;
 
+
+
       if (!document.querySelector(styleId)) {
+
         const head = document.querySelector("head");
+
         style = document.createElement("style");
+
         style.id = "hs-brand-variables";
 
+
+
         head.append(style);
+
       } else {
+
         style = document.querySelector(styleId);
+
       }
+
+
 
       style.textContent = `
+
         :root[data-theme="theme-${theme}"],
+
         [data-theme="theme-${theme}"] {
+
           --primary-50:       var(--color-${brand}-50);
+
           --primary-100:      var(--color-${brand}-100);
+
           --primary-200:      var(--color-${brand}-200);
+
           --primary-300:      var(--color-${brand}-300);
+
           --primary-400:      var(--color-${brand}-400);
+
           --primary-500:      var(--color-${brand}-500);
+
           --primary-600:      var(--color-${brand}-600);
+
           --primary-700:      var(--color-${brand}-700);
+
           --primary-800:      var(--color-${brand}-800);
+
           --primary-900:      var(--color-${brand}-900);
+
           --primary-950:      var(--color-${brand}-950);
+
         }
+
       `;
+
     }
 
+
+
     (function () {
+
       const unavailableColorThemes = window.HS_UNAVAILABLE_COLOR_THEMES;
+
       const pathname = window.location.pathname;
+
       let reducedThemes = [];
+
       let defaultTheme = "default";
+
       let defaultBrand = "blue";
+
       let defaultFont = "sans";
 
+
+
       const themesDefaults = {
+
         "default": "blue",
+
         "harvest": "amber",
+
         "retro": "fuchsia",
+
         "ocean": "cyan",
+
         "autumn": "yellow",
+
         "moon": "gray",
+
         "bubblegum": "pink",
+
         "cashmere": "mauve",
+
         "olive": "avocado",
+
       };
 
+
+
       for (const [key_i, value_i] of Object.entries(unavailableColorThemes)) {
+
         const { theme, excludes } = value_i;
 
+
+
         if (pathname.includes(key_i)) {
+
           defaultTheme = theme;
 
+
+
           if (Array.isArray(excludes)) {
+
             reducedThemes = excludes;
+
             break;
+
           } else {
+
             const result = [];
+
+
 
             if (excludes['*']) result.push(...excludes['*']);
 
+
+
             for (const [key_j, value_j] of Object.entries(excludes)) {
+
               if (key_j !== '*' && pathname.includes(key_j)) result.push(...value_j);
+
             }
 
+
+
             reducedThemes = result;
+
             break;
+
           }
+
         }
+
       }
+
+
 
       const colorTheme = localStorage.getItem('hs-clipboard-theme');
+
       const font = localStorage.getItem('hs-clipboard-font');
+
       const brand = localStorage.getItem('hs-clipboard-brand');
+
       const html = document.querySelector('html');
+
       const accessibleFilePathPatterns = [
+
         "/templates/",
+
         "/pro/agency/",
+
         "/pro/ai-chat/",
+
         "/pro/analytics/",
+
         "/pro/calendars/",
+
         "/pro/chat/",
+
         "/pro/cms/",
+
         "/pro/coffee-shop/",
+
         "/pro/crm/",
+
         "/pro/dashboard/",
+
         "/pro/ecommerce/",
+
         "/pro/files/",
+
         "/pro/inbox/",
+
         "/pro/payment/",
+
         "/pro/personal/",
+
         "/pro/project/",
+
         "/pro/shop/",
+
         "/pro/shop-marketplace/",
+
         "/pro/smart-home/",
+
         "/pro/startup/",
+
         "/pro/video-call/",
+
         "/pro/workspace/",
+
       ];
+
       const currentUrl = window.location.href;
+
       const isIncludedUrl = accessibleFilePathPatterns.some((pattern) => currentUrl.includes(pattern));
 
+
+
       if (isIncludedUrl) {
+
         (function () {
+
           const currentTheme = colorTheme && !reducedThemes.includes(colorTheme) ? colorTheme : defaultTheme;
+
           const currentBrand = brand || themesDefaults[currentTheme];
 
+
+
           console.log("Current Theme:", currentTheme);
+
           console.log("Current Brand:", brand, themesDefaults[currentTheme]);
 
+
+
           html.setAttribute('data-theme', `theme-${currentTheme}`);
+
           html.setAttribute('data-brand', currentBrand);
 
+
+
           generateVariables(currentTheme, currentBrand)
+
         })();
+
+
 
         (function () {
+
           const currentFont = font ?? defaultFont;
 
+
+
           html.setAttribute('data-font', currentFont);
+
         })();
+
       }
+
     })();
+
   </script>
+
   <script>
+
     (function () {
+
       const html = document.querySelector('html');
+
       const isLightOrAuto = localStorage.getItem('hs_theme') === 'light' || (localStorage.getItem('hs_theme') === 'auto' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+
       const isDarkOrAuto = localStorage.getItem('hs_theme') === 'dark' || (localStorage.getItem('hs_theme') === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
+
+
       if (isLightOrAuto && html.classList.contains('dark')) html.classList.remove('dark');
+
       else if (isDarkOrAuto && html.classList.contains('light')) html.classList.remove('light');
+
       else if (isDarkOrAuto && !html.classList.contains('dark')) html.classList.add('dark');
+
       else if (isLightOrAuto && !html.classList.contains('light')) html.classList.add('light');
+
     })();
+
   </script>
+
 </head>
 
+
+
 <body class="flex flex-col cyqbg overflow-x-hidden gw9cg">
+
   <!-- ========== HEADER ========== -->
+
   <header class="qyrcd bq7k1 mhm76 flex flex-wrap c41c0 md:flex-nowrap hh3zb xbrjb">
+
    <div class="max-w-[85rem] flex flex-wrap g86xu ygafd pjr9t d8ttz items-center w-full mx-auto py-[11px] p42px cti9j gwqpr c4mnv">
+
     <div class="l5bar ed9df">
+
      <div class="flex items-center jdzig">
+
       <!-- LOGO LINK: SVG logo links back to home page -->
+
       <!-- aria-label provides accessible text for screen readers -->
+
       <!-- flex-none prevents logo from shrinking, focus:outline-hidden removes default focus ring -->
+
       <a aria-label="Preline" class="flex-none y9dku taweu inline-block ctc9x focus:outline-hidden d8pr2" href="./index.html">
+
        <!-- SVG ICON: Scalable vector graphic for logo (scales without quality loss) -->
+
        <svg class="rydhd h-auto" fill="none" height="32" viewbox="0 0 116 32" width="116" xmlns="http://www.w3.org/2000/svg">
+
         <path class="np124" d="M33.5696 30.8182V11.3182H37.4474V13.7003H37.6229C37.7952 13.3187 38.0445 12.9309 38.3707 12.5369C38.7031 12.1368 39.134 11.8045 39.6634 11.5398C40.1989 11.2689 40.8636 11.1335 41.6577 11.1335C42.6918 11.1335 43.6458 11.4044 44.5199 11.946C45.3939 12.4815 46.0926 13.291 46.6158 14.3743C47.139 15.4515 47.4006 16.8026 47.4006 18.4276C47.4006 20.0095 47.1451 21.3452 46.6342 22.4347C46.1295 23.518 45.4401 24.3397 44.5661 24.8999C43.6982 25.4538 42.7256 25.7308 41.6484 25.7308C40.8852 25.7308 40.2358 25.6046 39.7003 25.3523C39.1709 25.0999 38.737 24.7829 38.3984 24.4013C38.0599 24.0135 37.8014 23.6226 37.6229 23.2287H37.5028V30.8182H33.5696ZM37.4197 18.4091C37.4197 19.2524 37.5367 19.9879 37.7706 20.6158C38.0045 21.2436 38.343 21.733 38.7862 22.0838C39.2294 22.4285 39.768 22.6009 40.402 22.6009C41.0421 22.6009 41.5838 22.4254 42.027 22.0746C42.4702 21.7176 42.8056 21.2251 43.0334 20.5973C43.2673 19.9633 43.3842 19.2339 43.3842 18.4091C43.3842 17.5904 43.2704 16.8703 43.0426 16.2486C42.8149 15.6269 42.4794 15.1406 42.0362 14.7898C41.593 14.4389 41.0483 14.2635 40.402 14.2635C39.7618 14.2635 39.2202 14.4328 38.777 14.7713C38.34 15.1098 38.0045 15.59 37.7706 16.2116C37.5367 16.8333 37.4197 17.5658 37.4197 18.4091ZM49.2427 25.5V11.3182H53.0559V13.7926H53.2037C53.4622 12.9124 53.8961 12.2476 54.5055 11.7983C55.1149 11.3428 55.8166 11.1151 56.6106 11.1151C56.8076 11.1151 57.02 11.1274 57.2477 11.152C57.4754 11.1766 57.6755 11.2105 57.8478 11.2536V14.7436C57.6632 14.6882 57.4077 14.639 57.0815 14.5959C56.7553 14.5528 56.4567 14.5312 56.1859 14.5312C55.6073 14.5312 55.0903 14.6574 54.6348 14.9098C54.1854 15.156 53.8284 15.5007 53.5638 15.9439C53.3052 16.3871 53.176 16.898 53.176 17.4766V25.5H49.2427ZM64.9043 25.777C63.4455 25.777 62.1898 25.4815 61.1373 24.8906C60.0909 24.2936 59.2845 23.4503 58.7182 22.3608C58.1519 21.2652 57.8688 19.9695 57.8688 18.4737C57.8688 17.0149 58.1519 15.7346 58.7182 14.6328C59.2845 13.531 60.0816 12.6723 61.1096 12.0568C62.1437 11.4413 63.3563 11.1335 64.7474 11.1335C65.683 11.1335 66.5539 11.2843 67.3603 11.5859C68.1728 11.8814 68.8806 12.3277 69.4839 12.9247C70.0932 13.5218 70.5672 14.2727 70.9057 15.1776C71.2443 16.0762 71.4135 17.1288 71.4135 18.3352V19.4155H59.4384V16.978H67.7111C67.7111 16.4117 67.588 15.91 67.3418 15.473C67.0956 15.036 66.754 14.6944 66.317 14.4482C65.8861 14.1958 65.3844 14.0696 64.812 14.0696C64.2149 14.0696 63.6856 14.2081 63.2239 14.4851C62.7684 14.7559 62.4114 15.1222 62.1529 15.5838C61.8944 16.0393 61.762 16.5471 61.7559 17.1072V19.4247C61.7559 20.1264 61.8851 20.7327 62.1437 21.2436C62.4083 21.7545 62.7807 22.1484 63.2608 22.4254C63.741 22.7024 64.3103 22.8409 64.9689 22.8409C65.406 22.8409 65.8061 22.7794 66.1692 22.6562C66.5324 22.5331 66.8432 22.3485 67.1018 22.1023C67.3603 21.8561 67.5572 21.5545 67.6927 21.1974L71.3304 21.4375C71.1458 22.3116 70.7672 23.0748 70.1948 23.7273C69.6285 24.3736 68.896 24.8783 67.9974 25.2415C67.1048 25.5985 66.0738 25.777 64.9043 25.777ZM77.1335 6.59091V25.5H73.2003V6.59091H77.1335ZM79.5043 25.5V11.3182H83.4375V25.5H79.5043ZM81.4801 9.49006C80.8954 9.49006 80.3937 9.29616 79.9752 8.90838C79.5628 8.51444 79.3566 8.04356 79.3566 7.49574C79.3566 6.95407 79.5628 6.48935 79.9752 6.10156C80.3937 5.70762 80.8954 5.51065 81.4801 5.51065C82.0649 5.51065 82.5635 5.70762 82.9759 6.10156C83.3944 6.48935 83.6037 6.95407 83.6037 7.49574C83.6037 8.04356 83.3944 8.51444 82.9759 8.90838C82.5635 9.29616 82.0649 9.49006 81.4801 9.49006ZM89.7415 17.3011V25.5H85.8083V11.3182H89.5569V13.8203H89.723C90.037 12.9955 90.5632 12.343 91.3019 11.8629C92.0405 11.3767 92.9361 11.1335 93.9887 11.1335C94.9735 11.1335 95.8322 11.349 96.5647 11.7798C97.2971 12.2107 97.8665 12.8262 98.2728 13.6264C98.679 14.4205 98.8821 15.3684 98.8821 16.4702V25.5H94.9489V17.1719C94.9551 16.304 94.7335 15.6269 94.2841 15.1406C93.8348 14.6482 93.2162 14.402 92.4283 14.402C91.8989 14.402 91.4311 14.5159 91.0249 14.7436C90.6248 14.9714 90.3109 15.3037 90.0831 15.7408C89.8615 16.1716 89.7477 16.6918 89.7415 17.3011ZM107.665 25.777C106.206 25.777 104.951 25.4815 103.898 24.8906C102.852 24.2936 102.045 23.4503 101.479 22.3608C100.913 21.2652 100.63 19.9695 100.63 18.4737C100.63 17.0149 100.913 15.7346 101.479 14.6328C102.045 13.531 102.842 12.6723 103.87 12.0568C104.905 11.4413 106.117 11.1335 107.508 11.1335C108.444 11.1335 109.315 11.2843 110.121 11.5859C110.934 11.8814 111.641 12.3277 112.245 12.9247C112.854 13.5218 113.328 14.2727 113.667 15.1776C114.005 16.0762 114.174 17.1288 114.174 18.3352V19.4155H102.199V16.978H110.472C110.472 16.4117 110.349 15.91 110.103 15.473C109.856 15.036 109.515 14.6944 109.078 14.4482C108.647 14.1958 108.145 14.0696 107.573 14.0696C106.976 14.0696 106.446 14.2081 105.985 14.4851C105.529 14.7559 105.172 15.1222 104.914 15.5838C104.655 16.0393 104.523 16.5471 104.517 17.1072V19.4247C104.517 20.1264 104.646 20.7327 104.905 21.2436C105.169 21.7545 105.542 22.1484 106.022 22.4254C106.502 22.7024 107.071 22.8409 107.73 22.8409C108.167 22.8409 108.567 22.7794 108.93 22.6562C109.293 22.5331 109.604 22.3485 109.863 22.1023C110.121 21.8561 110.318 21.5545 110.454 21.1974L114.091 21.4375C113.907 22.3116 113.528 23.0748 112.956 23.7273C112.389 24.3736 111.657 24.8783 110.758 25.2415C109.866 25.5985 108.835 25.777 107.665 25.777Z" fill="currentColor">
+
         </path>
+
         <path class="q1i2z" d="M1 29.5V16.5C1 9.87258 6.37258 4.5 13 4.5C19.6274 4.5 25 9.87258 25 16.5C25 23.1274 19.6274 28.5 13 28.5H12" stroke="currentColor" stroke-width="2">
+
         </path>
+
         <path class="q1i2z" d="M5 29.5V16.66C5 12.1534 8.58172 8.5 13 8.5C17.4183 8.5 21 12.1534 21 16.66C21 21.1666 17.4183 24.82 13 24.82H12" stroke="currentColor" stroke-width="2">
+
         </path>
+
         <circle class="np124" cx="13" cy="16.5214" fill="currentColor" r="5">
+
         </circle>
+
        </svg>
+
       </a>
+
       <!-- End Logo -->
+
       <!-- HEADER BUTTONS: Theme selector and other options -->
+
       <div class="duiq5 b0msq">
+
        <!-- DROPDOWN MENU: Templates/Theme Selector (hs-dropdown is HSPreline component) -->
+
        <div class="hs-dropdown relative [--scope:window] [--auto-close:inside] inline-flex">
+
         <button aria-expanded="false" aria-haspopup="menu" aria-label="Dropdown" class="hs-dropdown-toggle group relative flex lp3ls items-center uev8b m859b edpyz c4t4j bnjlx d298d disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden" id="hs-dropdown-preview-navbar" type="button">
+
          <span class="">
+
           <svg class="x215h y6rh0" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
            <path d="m6 9 6 6 6-6">
+
            </path>
+
           </svg>
+
          </span>
+
          <span class="absolute -top-0.5 -end-0.5">
+
           <span class="relative flex">
+
            <span class="ykapz absolute inline-flex e9n2b rounded-[999px] ovvzv dark:bg-indigo-600 e4zvp">
+
            </span>
+
            <span class="relative inline-flex n6fqq uf7jb rounded-[999px]">
+
            </span>
+
            <span class="rfrdb">
+
             Notification
+
            </span>
+
           </span>
+
          </span>
+
         </button>
+
         <!-- Dropdown -->
+
         <div aria-labelledby="hs-dropdown-preview-navbar" aria-orientation="vertical" class="hs-dropdown-menu hs-dropdown-open:opacity-100 w-full sonuy lwfqs transition-[opacity,margin] duration opacity-0 hidden y77vh overflow-hidden mak94 iwwqw horag rounded-[12px] p6d5j dark:bg-neutral-800 dark:border-neutral-700" role="menu" tabindex="-1">
+
          <!-- Tab -->
+
          <!-- End Tab Content -->
+
          <!-- Tab Content -->
+
          <div aria-labelledby="hs-pmn-item-theme" class="hidden" id="hs-pmn-theme" role="tabpanel">
+
           <!-- Header -->
+
           <div class="rwnnd flex flex-wrap g86xu items-center oskez">
+
            <span class="block ctc9x yymkp gc1dd dark:text-neutral-200">
+
             Themes
+
            </span>
+
           </div>
+
           <!-- End Header -->
+
           <!-- Body -->
+
           <!-- Body -->
+
           <!-- Footer -->
+
           <div class="rwnnd">
+
            <a class="group ltybu rounded-[6px] flex lp3ls items-center jdzig text-[13px] ymxvv ygudh vrc5v disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden oew0c dark:bg-white dark:hover:bg-neutral-200 dark:focus:bg-neutral-200 dark:text-neutral-800" href="/admin/">
+
             Dashboard and more
+
             <svg class="hidden md:inline-block y6rh0 xqxx6 group-hover:translate-x-0.5 a38gk" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
              <path class="lg:opacity-0 u7ebf lg:group-hover:opacity-100 lg:group-hover:translate-x-0 lg:group-focus:opacity-100 lg:group-focus:translate-x-0 zyg6t" d="M5 12h14">
+
              </path>
+
              <path class="x0if1 lg:group-hover:translate-x-0 lg:group-focus:translate-x-0 zyg6t" d="m12 5 7 7-7 7">
+
              </path>
+
             </svg>
+
            </a>
+
           </div>
+
           <!-- End Footer -->
+
          </div>
+
          <!-- End Tab Content -->
+
         </div>
+
         <!-- End Dropdown -->
+
        </div>
+
        <!-- End Templates Dropdown -->
+
       </div>
+
      </div>
+
     </div>
+
     <!-- RIGHT SIDE HEADER BUTTONS: Search, Favorites, Cart, Account -->
+
     <div class="l5bar zg7pd mqy3x flex r49qf items-center my9gz">
+
      <div class="flex items-center azl7k">
+
       <!-- SEARCH BUTTON: Opens search overlay (data-hs-overlay references the popup element ID) -->
+
       <!-- aria-expanded: accessibility attribute for toggle state -->
+
       <button aria-expanded="false" class="inline-flex y6rh0 lp3ls items-center my9gz jxr7s nj29a c4t4j bnjlx focus:outline-hidden d298d" data-hs-overlay="#hs-pro-shnsm" type="button">
+
        <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
         <circle cx="11" cy="11" r="8">
+
         </circle>
+
         <path d="m21 21-4.3-4.3">
+
         </path>
+
        </svg>
+
       </button>
+
       <!-- End Search Button Icon -->
+
       <!-- FAVORITES BUTTON: Shows saved items dropdown, auto-close when clicking inside -->
+
       <!-- [--auto-close:inside] and [--placement:bottom-right] are Tailwind CSS variables for dropdown behavior -->
+
       <div class="hs-dropdown [--auto-close:inside] [--placement:bottom-right] relative inline-flex">
+
        <button aria-expanded="false" aria-haspopup="menu" aria-label="Dropdown" class="relative y6rh0 inline-flex lp3ls items-center my9gz jxr7s nj29a c4t4j bnjlx focus:outline-hidden d298d" id="hs-pro-dnnd" type="button">
+
         <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z">
+
          </path>
+
         </svg>
+
         <span class="flex absolute bq7k1 m8htk nnhrf -mt-1 -me-1">
+
          <span class="relative preze ogwmn inline-flex lp3ls items-center text-[10px] pm6ks bni17 nj29a lw3pa">
+
           0
+
           <span class="rfrdb">
+
            Notifications
+
           </span>
+
          </span>
+
         </span>
+
        </button>
+
        <!-- End Favorites Button Icon -->
+
        <!-- Favorites Dropdown -->
+
        <div aria-labelledby="hs-pro-dnnd" aria-orientation="vertical" class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 w-full c47i7 hidden nnhrf khfq6 t9t95 nld0z ocfsa loif1 sypow nthx0 u2pfs before:absolute before:-top-4 before:start-0 before:w-full" role="menu" tabindex="-1">
+
         <div class="xxt8a pf6kx">
+
          <span class="block at2zb c4t4j">
+
           Favorites
+
          </span>
+
         </div>
+
         <div class="pf6kx afsci overflow-y-auto overflow-hidden [&amp;::-webkit-scrollbar]:w-2 [&amp;::-webkit-scrollbar-thumb]:rounded-none [&amp;::-webkit-scrollbar-track]:bg-scrollbar-track [&amp;::-webkit-scrollbar-thumb]:bg-scrollbar-thumb">
+
          <div class="space-y-5">
+
          </div>
+
         </div>
+
         <div class="xxt8a pf6kx rm4xc">
+
           <a class="inline-flex lp3ls items-center at2zb yymkp c4t4j carpj a8v2i qltf3 bz0ic focus:outline-hidden ti70c" href="./favorite.html" data-storefront-view-favorites="true">
+
            View favorites
+
           </a>
+
         </div>
+
        </div>
+
       </div>
+
       <!-- End Favorites Dropdown -->
+
       <!-- Cart Button Icon -->
+
       <button aria-expanded="false" class="relative y6rh0 inline-flex lp3ls items-center my9gz jxr7s nj29a c4t4j bnjlx focus:outline-hidden d298d" data-hs-overlay="#hs-pro-shco" type="button">
+
        <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z">
+
         </path>
+
         <path d="M3 6h18">
+
         </path>
+
         <path d="M16 10a4 4 0 0 1-8 0">
+
         </path>
+
        </svg>
+
        <span class="flex absolute bq7k1 m8htk nnhrf -mt-1 -me-1">
+
         <span class="relative preze ogwmn inline-flex lp3ls items-center text-[10px] pm6ks bni17 nj29a lw3pa">
+
          0
+
          <span class="rfrdb">
+
           Notifications
+
          </span>
+
         </span>
+
        </span>
+
       </button>
+
       <!-- End Cart Button Icon -->
+
       <!-- USER ACCOUNT MENU: Profile picture shows dropdown with account options when clicked -->
+
       <div class="hs-dropdown [--auto-close:inside] [--placement:bottom-right] relative inline-flex">
+
        <!-- USER AVATAR IMAGE: Clickable image that triggers account menu dropdown -->
+
        <button aria-expanded="false" aria-haspopup="menu" aria-label="Dropdown" class="relative y6rh0 inline-flex lp3ls items-center my9gz jxr7s nj29a c4t4j bnjlx focus:outline-hidden d298d" id="hs-pro-shadnli" type="button">
+
         <!-- Profile picture of logged-in user -->
+
         <img alt="Avatar" class="y6rh0 uev8b nj29a auth-avatar-image hidden"/>
+
         <span class="auth-avatar-fallback flex y6rh0 uev8b nj29a items-center justify-center mak94 nck10">
+
          <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+
           <circle cx="12" cy="7" r="4"></circle>
+
          </svg>
+
         </span>
+
        </button>
+
        <!-- End Account Button Icon -->
+
        <!-- ACCOUNT DROPDOWN MENU: Contains user profile info and account options -->
+
        <!-- aria-labelledby links this menu to the button that opens it (for accessibility) -->
+
        <!-- role="menu" tells screen readers this is a menu component -->
+
        <!-- Hidden by default (opacity-0, hidden), shown on button click -->
+
        <div aria-labelledby="hs-pro-shadnli" aria-orientation="vertical" class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 w-full q2y1k hidden nnhrf khfq6 t9t95 nld0z ocfsa loif1 sypow nthx0 u2pfs before:absolute before:-top-4 before:start-0 before:w-full before:h-5" role="menu" tabindex="-1">
+
         <div class="max-w-[22rem] w-full abuy9 govng h83vk acy1r c4mnv">
+
          <div id="auth-dropdown-content">
+
           <div class="auth-logged-in ltybu hidden">
+
            <a class="abuy9 zqj33 flex items-center oskez edpyz bnjlx focus:outline-hidden d298d" href="./Personal Info.html">
+
             <img alt="Avatar" class="y6rh0 oh9ou nj29a auth-account-avatar hidden"/>
+
             <div class="t6ue9">
+
              <span class="block at2zb yymkp c4t4j auth-user-name">
+
               
+
              </span>
+
              <p class="m859b f1ztf auth-user-email">
+
               
+
              </p>
+
             </div>
+
            </a>
+
            <div class="t86c5 sb1ny stpxn i24r3"></div>
+
            <ul class="flex flex-col space-y-0.5">
+
             <li>
+
              <a class="w-full flex items-center qc54s abuy9 zqj33 yymkp c4t4j edpyz bnjlx focus:outline-hidden d298d" href="./Personal Info.html">
+
               <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+
                <circle cx="12" cy="7" r="4"></circle>
+
               </svg>
+
               Personal Info
+
              </a>
+
             </li>
+
             <li>
+
              <a class="w-full flex items-center qc54s abuy9 zqj33 yymkp c4t4j edpyz bnjlx focus:outline-hidden d298d" href="./My Orders.html">
+
               <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+
                <path d="M3 6h18"></path>
+
                <path d="M16 10a4 4 0 0 1-8 0"></path>
+
               </svg>
+
               My Orders
+
              </a>
+
             </li>
+
             <li>
+
              <a class="w-full flex items-center qc54s abuy9 zqj33 yymkp c4t4j edpyz bnjlx focus:outline-hidden d298d" href="./Order Details.html">
+
               <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+
                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+
                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+
                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+
                <path d="M8 7v10"></path>
+
                <path d="M12 7v10"></path>
+
                <path d="M17 7v10"></path>
+
               </svg>
+
               Order Details
+
              </a>
+
             </li>
+
            </ul>
+
            <div class="t86c5 sb1ny stpxn i24r3"></div>
+
            <div class="t86c5 sb1ny stpxn i24r3"></div>
+
            <p>
+
             <button class="w-full flex items-center qc54s abuy9 zqj33 yymkp c4t4j edpyz bnjlx lfyd7 focus:outline-hidden d298d lfp6n auth-logout-button" data-auth-bound="true" type="button">
+
              <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+
               <polyline points="16 17 21 12 16 7"></polyline>
+
               <line x1="21" x2="9" y1="12" y2="12"></line>
+
              </svg>
+
              Logout
+
             </button>
+
            </p>
+
           </div>
+
           <div class="auth-logged-out i0yn8">
+
            <div class="zorzx nck10 edpyz">
+
             <div class="a3olr rm4xc">
+
              <span class="block at2zb c4t4j">
+
               Account
+
              </span>
+
             </div>
+
             <a class="abuy9 aimp4 w-full inline-flex lp3ls items-center my9gz yymkp at2zb edpyz pm6ks mak94 ve4ck bni17 pucrg focus:outline-hidden soa63" href="./Login.html">
+
              Log in
+
             </a>
+
             <p class="ljp3z rm4xc yymkp f1ztf">
+
              Don't have an account?
+
              <a class="text-[13px] f1ztf carpj a8v2i bz0ic focus:outline-hidden ti70c" href="./Create Account.html">
+
               Register
+
              </a>
+
             </p>
+
            </div>
+
            <div class="-mx-3 dvh79 kize3">
+
             <div class="d6bui p3x4c e1azp mjfwa y8a3d v77h5 u7zb2">
+
              <a class="abuy9 aimp4 flex items-center h7z6o bnjlx y9dku focus:outline-hidden d298d" href="./My Orders.html">
+
               <div class="t6ue9">
+
                <div class="flex h7z6o">
+
                 <svg class="y6rh0 x215h liwkv c4t4j" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+
                 <div class="t6ue9">
+
                  <span class="yymkp c4t4j">
+
                   My orders
+
                  </span>
+
                 </div>
+
                </div>
+
               </div>
+
               <div class="ms-auto">
+
                <svg class="y6rh0 x215h n7lpx" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+
               </div>
+
              </a>
+
             </div>
+
             <div class="d6bui p3x4c e1azp mjfwa y8a3d v77h5 u7zb2">
+
              <a class="abuy9 aimp4 flex items-center h7z6o bnjlx y9dku focus:outline-hidden d298d" href="./Order Checkup.html">
+
               <div class="t6ue9">
+
                <div class="flex h7z6o">
+
                 <svg class="y6rh0 x215h liwkv c4t4j" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"></path><circle cx="12" cy="8" r="2"></circle><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"></path></svg>
+
                 <div class="t6ue9">
+
                  <span class="yymkp c4t4j">
+
                   Order status
+
                  </span>
+
                 </div>
+
                </div>
+
               </div>
+
               <div class="ms-auto">
+
                <svg class="y6rh0 x215h n7lpx" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+
               </div>
+
              </a>
+
             </div>
+
             <div class="d6bui p3x4c e1azp mjfwa y8a3d v77h5 u7zb2">
+
              <a class="abuy9 aimp4 flex items-center h7z6o bnjlx y9dku focus:outline-hidden d298d" href="./index.html">
+
               <div class="t6ue9">
+
                <div class="flex h7z6o">
+
                 <svg class="y6rh0 x215h liwkv c4t4j" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>
+
                 <div class="t6ue9">
+
                  <span class="yymkp c4t4j">
+
                   Help
+
                  </span>
+
                 </div>
+
                </div>
+
               </div>
+
               <div class="ms-auto">
+
                <svg class="y6rh0 x215h n7lpx" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+
               </div>
+
              </a>
+
             </div>
+
            </div>
+
           </div>
+
          </div>
+
          <!-- Body -->
+
          <!-- Footer -->
+
          <div class="rwnnd">
+
           <a class="group ltybu rounded-[6px] flex lp3ls items-center jdzig text-[13px] ymxvv ygudh vrc5v disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden oew0c dark:bg-white dark:hover:bg-neutral-200 dark:focus:bg-neutral-200 dark:text-neutral-800" href="/admin/">
+
            Dashboard and more
+
            <svg class="hidden md:inline-block y6rh0 xqxx6 group-hover:translate-x-0.5 a38gk" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
             <path class="lg:opacity-0 u7ebf lg:group-hover:opacity-100 lg:group-hover:translate-x-0 lg:group-focus:opacity-100 lg:group-focus:translate-x-0 zyg6t" d="M5 12h14">
+
             </path>
+
             <path class="x0if1 lg:group-hover:translate-x-0 lg:group-focus:translate-x-0 zyg6t" d="m12 5 7 7-7 7">
+
             </path>
+
            </svg>
+
           </a>
+
          </div>
+
          <!-- End Footer -->
+
         </div>
+
        </div>
+
       </div>
+
       <!-- End Account Dropdown -->
+
      </div>
+
      <div class="md:hidden">
+
       <!-- Collapse Button Trigger -->
+
       <button aria-controls="hs-pro-dmh" aria-expanded="false" aria-haspopup="dialog" aria-label="Toggle navigation" class="dv8pm x9yei inline-flex lp3ls items-center my9gz yymkp at2zb edpyz s6i1l mak94 x3ljb k0ser cirj5 dduyg disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden usqtq" data-hs-overlay="#hs-pro-dmh" data-hs-overlay-options='{
+
             "moveOverlayToBody": 767
+
           }' id="hs-pro-dmh-collapse" type="button">
+
        <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
         <circle cx="12" cy="12" r="1">
+
         </circle>
+
         <circle cx="12" cy="5" r="1">
+
         </circle>
+
         <circle cx="12" cy="19" r="1">
+
         </circle>
+
        </svg>
+
       </button>
+
       <!-- End Collapse Button Trigger -->
+
      </div>
+
     </div>
+
     <div class="rogrs lpw3f fg3vz d8ttz t6ue9 md:basis-auto lwco9">
+
      <!-- Nav -->
+
      <div aria-label="Sidebar" class="hs-overlay hs-overlay-open:translate-x-0 [--auto-close:md] -translate-x-full wq5kg bfnp5 d5ksw l8hgh e9n2b c47i7 xbrjb hidden fixed bq7k1 i1rbz ec26l ui95s md:block md:h-auto md:w-full op8r2 ddq3p dk4bo" data-hs-overlay-close-on-resize="" id="hs-pro-dmh" role="dialog" tabindex="-1">
+
       <div class="overflow-hidden overflow-y-auto nm4j1 [&amp;::-webkit-scrollbar]:w-2 [&amp;::-webkit-scrollbar-thumb]:rounded-none [&amp;::-webkit-scrollbar-track]:bg-scrollbar-track [&amp;::-webkit-scrollbar-thumb]:bg-scrollbar-thumb">
+
        <!-- Header -->
+
        <div class="dvh79 pf6kx md:hidden flex g86xu items-center e1azp u03j1">
+
         <h3 class="at2zb c4t4j">
+
          Menu
+
         </h3>
+
         <button aria-expanded="false" aria-label="Close" class="k85d4 o8oua inline-flex lp3ls items-center jdzig nj29a s6i1l mak94 x3ljb m859b c4t4j bnjlx focus:outline-hidden d298d disabled:opacity-50 disabled:pointer-events-none" data-hs-overlay="#hs-pro-dmh" type="button">
+
          <span class="hidden lg:block">
+
           Esc
+
          </span>
+
          <span class="block lg:hidden">
+
           Close
+
          </span>
+
          <svg class="y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
           <path d="M18 6 6 18">
+
           </path>
+
           <path d="m6 6 12 12">
+
           </path>
+
          </svg>
+
         </button>
+
        </div>
+
        <!-- End Header -->
+
        <div class="md:flex yq846 md:items-center xxt8a pf6kx aekyb">
+
         <!-- Dropdown Link -->
+
         <div class="md:inline-block">
+
          <a class="dvh79 vp4qw bnzaf msnrw w-full md:w-auto flex items-center yymkp m4rra hbi2l edpyz a8v2i lpc02 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden jnkmc" href="./Order Checkup.html">
+
           Order Status
+
          </a>
+
         </div>
+
         <!-- End Dropdown Link -->
+
         <!-- Dropdown Link -->
+
             <!-- End Dropdown Link -->
+
         <!-- Dropdown Link -->
+
         <div class="md:inline-block">
+
          <a class="dvh79 vp4qw bnzaf msnrw w-full md:w-auto flex items-center yymkp m4rra hbi2l edpyz a8v2i lpc02 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden jnkmc" href="./Product Listing.html">
+
           Home
+
          </a>
+
         </div>
+
         <!-- End Dropdown Link -->
+
         <!-- Dropdown Link -->
+
         <div class="hs-dropdown [--strategy:static] md:[--strategy:absolute] [--adaptive:none] md:[--trigger:hover] [--auto-close:inside] md:inline-block">
+
          <!-- Link Button -->
+
          <button aria-expanded="false" aria-haspopup="menu" aria-label="Dropdown" class="hs-dropdown-toggle dvh79 vp4qw bnzaf msnrw w-full md:w-auto flex items-center yymkp m4rra hbi2l edpyz a8v2i lpc02 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden jnkmc" id="hs-pro-shnnd5" type="button">
+
           Sales
+
           <svg class="md:hidden hs-dropdown-open:-rotate-180 md:hs-dropdown-open:rotate-0 d5ksw ms-auto th2wa y6rh0 x215h" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+
            <path d="m6 9 6 6 6-6">
+
            </path>
+
           </svg>
+
          </button>
+
          <!-- End Link Button -->
+
          <!-- Dropdown Menu -->
-         <div aria-labelledby="hs-pro-shnnd5" aria-orientation="vertical" class="hs-dropdown-menu hs-dropdown-open:opacity-100 opacity-0 w-full nnhrf top-full m8htk qhefy uwzk3 ipxk7 prscc m4gd3 dd1js y2lc3 before:absolute before:-top-4 before:start-0 before:w-full before:h-5 hidden" data-placement="bottom-start" role="menu" style="" tabindex="-1">
-          <!-- Grid -->
-          <div class="xxt8a gc1zm tex4h da7vf uuht4 q3gap">
-           <div>
-           </div>
-           <div>
-           </div>
-           <!-- End Col -->
-           <div>
-            <span class="block a3olr at2zb yymkp c4t4j">
-            </span>
-            <ul class="ljp3z tex4h space-y-3">
-            </ul>
-           </div>
-           <div>
-            <span class="block a3olr at2zb yymkp c4t4j">
-            </span>
-            <ul class="ljp3z tex4h space-y-3">
-            </ul>
-           </div>
-           <!-- End Col -->
-          </div>
-          <!-- End Grid -->
-          <!-- Link Card -->
-          
-          <!-- End Link Card -->
-         </div>
+
+         <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 opacity-0 w-full nnhrf top-full m8htk qhefy uwzk3 ipxk7 prscc m4gd3 dd1js y2lc3 before:absolute before:-top-4 before:start-0 before:w-full before:h-5 block" role="menu" aria-orientation="vertical" aria-labelledby="hs-pro-shnnd5" tabindex="-1" style="position: absolute; margin: 0px;" data-placement="bottom-end">
+                  <!-- Grid -->
+                  
+                  <!-- End Grid -->
+
+                  <!-- Link Card -->
+                  <div class="hidden md:block aimp4 gjryt">
+                    <a class="flex items-center haw2c group relative overflow-hidden edpyz sypgj nrnm1 psbed js926 mgjky edpyz focus:outline-hidden dark:from-orange-500/50 dark:via-purple-500/50 dark:to-indigo-500/50" href="https://preline.co/pro/ecommerce/index.html">
+                      <div class="t6ue9 en2kw">
+                        <p class="ctc9x dxw73 knnc2 qvjzb dark:text-foreground-inverse">
+                          50% off
+                        </p>
+                        <p class="at2zb c4t4j">
+                          Summer Sale
+                        </p>
+                        <p class="vbvcb flex items-center jdzig yymkp s7mjk">
+                          Shop now
+                          <svg class="y6rh0 x215h group-hover:translate-x-0.5 a38gk" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path class="md:opacity-0 o6pls md:group-hover:opacity-100 md:group-hover:translate-x-0 md:group-focus:opacity-100 md:group-focus:translate-x-0 j9rvg" d="M5 12h14"></path>
+                            <path class="fvmqw md:group-hover:translate-x-0 md:group-focus:translate-x-0 j9rvg" d="m12 5 7 7-7 7"></path>
+                          </svg>
+                        </p>
+                      </div>
+                      <div class="hc5e0 vk1be">
+                        <div class="tex4h hfud4 osjzw -mt-10 -rotate-12">
+                          <div class="space-y-2">
+                            <div class="g17jp s6i1l edpyz bm0ff">
+                              <img class="pfvea fy2yn y9dku" src="./home_files/photo-1516762689617-e1cffcef479d" alt="Product Image">
+                            </div>
+                            <div class="g17jp s6i1l edpyz bm0ff">
+                              <img class="pfvea fy2yn y9dku" src="./home_files/photo-1604176354204-9268737828e4" alt="Product Image">
+                            </div>
+                          </div>
+
+                          <div class="space-y-2 -mt-6">
+                            <div class="g17jp s6i1l edpyz bm0ff">
+                              <img class="pfvea fy2yn y9dku" src="./home_files/photo-1516763296043-f676c1105999" alt="Product Image">
+                            </div>
+                            <div class="g17jp s6i1l edpyz bm0ff">
+                              <img class="pfvea fy2yn y9dku" src="./home_files/photo-1527180718958-1721e2518786" alt="Product Image">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </div>
+                  <!-- End Link Card -->
+                </div>
+
          <!-- End Dropdown Menu -->
+
         </div>
+
         <!-- End Dropdown Link -->
+
        </div>
+
       </div>
+
      </div>
+
      <!-- End Nav -->
+
     </div>
+
    </div>
+
   </header>
+
   <!-- ========== END HEADER ========== -->
 
+
+
 <!-- ========== MAIN CONTENT ========== -->
+
   <main id="content" class="mcp9t brxzg flex-1 flex flex-col">
+
     <div class="szi1h pdpfl flex flex-col flex-1 w-full o3m6v cti9j gwqpr c4mnv mx-auto">
+
       <!-- Grid -->
+
       <div class="flex-1 tex4h da7vf uuht4 aa412">
+
         <!-- Order Confirmation -->
+
         <div class="vahht flex flex-col g86xu nuh62 lulbn wfvkq e1azp apc4n iq7bn iq7bn tcrg9">
+
           <div class="space-y-7">
+
             <h1 class="ctc9x btbr3 c4t4j">
+
               ðŸŽ‰ Order confirmed
+
             </h1>
 
+
+
             <div class="space-y-2">
+
               <h2 class="at2zb c4t4j">
+
                 Thank you for your order!
+
               </h2>
 
+
+
               <p class="liwkv yymkp f1ztf">
+
                 Your order&nbsp;number is <span class="ctc9x c4t4j">72813820</span>
+
               </p>
+
+
 
               <p class="vbvcb yymkp f1ztf">
+
                 An order confirmation has been sent to <span class="ctc9x c4t4j">jamescollins@site.so</span>
+
               </p>
+
             </div>
+
+
 
             <!-- Button Group -->
+
             <div class="flex flex-wrap items-center osjzw">
+
               <button type="button" class="dvh79 cti9j inline-flex lp3ls items-center i220p yymkp at2zb edpyz s6i1l mak94 x3ljb k0ser cirj5 dduyg disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden usqtq">
+
                 <svg class="y6rh0 xqxx6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+
                   <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
+
                   <rect x="6" y="14" width="12" height="8" rx="1" />
+
                 </svg>
+
                 Print confirmation
+
               </button>
 
+
+
               <a class="dvh79 cti9j inline-flex lp3ls items-center my9gz yymkp at2zb edpyz z0w76 mak94 dzdw5 cncwr wqd6j disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden cw5w5" href="../../index.html">
+
                 Continue shopping
+
                 <svg class="y6rh0 x215h" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                   <path d="m9 18 6-6-6-6" />
+
                 </svg>
+
               </a>
+
             </div>
+
             <!-- End Button Group -->
+
           </div>
 
+
+
           <div>
+
             <h2 class="ctc9x taweu c4t4j">
+
               What's next?
+
             </h2>
+
+
 
             <!-- Vertical Steps -->
+
             <div class="kohus">
+
               <!-- Step Item -->
+
               <div class="relative group y8a3d gjryt last:after:hidden after:absolute after:top-8 after:bottom-0 after:start-4 after:border-s after:border-line-2">
+
                 <div class="w-full flex qsqz9">
+
                   <span class="flex y6rh0 lp3ls items-center uev8b z0w76 mak94 dzdw5 cncwr yymkp ctc9x knnc2 nj29a">
+
                     <svg class="y6rh0 xqxx6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+
                       <circle cx="9" cy="7" r="4" />
+
                       <line x1="19" x2="19" y1="8" y2="14" />
+
                       <line x1="22" x2="16" y1="11" y2="11" />
+
                     </svg>
+
                   </span>
 
+
+
                   <div class="t6ue9 liwkv">
+
                     <h5 class="at2zb yymkp c4t4j">
+
                       Order placed
+
                     </h5>
+
+
 
                     <p class="m859b n7lpx">
+
                       5 Feb, 9:03
+
                     </p>
+
                   </div>
+
                 </div>
+
               </div>
+
               <!-- End Step Item -->
 
+
+
               <!-- Step Item -->
+
               <div class="relative group y8a3d gjryt last:after:hidden after:absolute after:top-8 after:bottom-0 after:start-4 after:border-s after:border-line-2">
+
                 <div class="w-full flex qsqz9">
+
                   <span class="flex y6rh0 lp3ls items-center uev8b s6i1l mak94 x3ljb yymkp ctc9x knnc2 k0ser nj29a">
+
                     <svg class="y6rh0 xqxx6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                       <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+
                       <path d="M15 18H9" />
+
                       <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+
                       <circle cx="17" cy="18" r="2" />
+
                       <circle cx="7" cy="18" r="2" />
+
                     </svg>
+
                   </span>
 
+
+
                   <div class="t6ue9 liwkv">
+
                     <h5 class="at2zb yymkp c4t4j">
+
                       Shipped
+
                     </h5>
+
                   </div>
+
                 </div>
+
               </div>
+
               <!-- End Step Item -->
 
+
+
               <!-- Step Item -->
+
               <div class="relative group y8a3d gjryt last:after:hidden after:absolute after:top-8 after:bottom-0 after:start-4 after:border-s after:border-line-2">
+
                 <div class="w-full flex qsqz9">
+
                   <span class="flex y6rh0 lp3ls items-center uev8b s6i1l mak94 x3ljb yymkp ctc9x knnc2 k0ser nj29a">
+
                     <svg class="y6rh0 xqxx6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                       <circle cx="12" cy="12" r="10" />
+
                       <polyline points="12 6 12 12 16 14" />
+
                     </svg>
+
                   </span>
 
+
+
                   <div class="t6ue9 liwkv">
+
                     <h5 class="at2zb yymkp c4t4j">
+
                       Out for delivery
+
                     </h5>
+
                   </div>
+
                 </div>
+
               </div>
+
               <!-- End Step Item -->
+
+
 
               <!-- Step Item -->
+
               <div class="relative group y8a3d gjryt last:after:hidden after:absolute after:top-8 after:bottom-0 after:start-4 after:border-s after:border-line-2">
+
                 <div class="w-full flex qsqz9">
+
                   <span class="flex y6rh0 lp3ls items-center uev8b s6i1l mak94 x3ljb yymkp ctc9x knnc2 k0ser nj29a">
+
                     <svg class="y6rh0 xqxx6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                       <path d="M20 6 9 17l-5-5" />
+
                     </svg>
+
                   </span>
 
+
+
                   <div class="t6ue9 liwkv">
+
                     <h5 class="at2zb yymkp c4t4j">
+
                       Delivered
+
                     </h5>
+
                   </div>
+
                 </div>
+
               </div>
+
               <!-- End Step Item -->
+
             </div>
+
             <!-- End Vertical Steps -->
+
           </div>
+
+
 
           <!-- Contact Info -->
+
           <div>
+
             <h2 class="wgwtz yymkp at2zb c4t4j">
+
               Need assistance?
+
             </h2>
 
+
+
             <div class="tex4h da7vf u7utu items-center osjzw">
+
               <div>
+
                 <p class="yymkp f1ztf">
+
                   Ask our customer service
+
                 </p>
+
                 <p class="yymkp f1ztf">
+
                   Mon to Sun, 5 am to 8 pm PT
+
                 </p>
+
               </div>
+
+
 
               <div class="bdcvt">
+
                 <a class="inline-flex lp3ls items-center jdzig at2zb yymkp c4t4j carpj a8v2i bz0ic focus:outline-hidden ti70c" href="../../help.html">
+
                   Contact us
+
                   <svg class="y6rh0 x215h" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                     <path d="m9 18 6-6-6-6" />
+
                   </svg>
+
                 </a>
+
               </div>
+
             </div>
+
           </div>
+
           <!-- End Contact Info -->
+
         </div>
+
         <!-- End Order Confirmation -->
 
+
+
         <!-- Order Summary -->
+
         <div class="md:w-full q8v4j u03v3 md:ms-auto">
+
           <!-- Header -->
+
           <div class="a3olr flex flex-wrap g86xu items-center my9gz">
+
             <h5 class="at2zb c4t4j">
+
               Your order
+
             </h5>
 
+
+
             <span class="dg39k u5noc qzae2 inline-flex items-center i220p m859b at2zb nj29a mak94 krxv5 qn8tw k73c1 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-500">
+
               <svg class="y6rh0 xqxx6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
                 <path d="M20 6 9 17l-5-5" />
+
               </svg>
+
               Paid
+
             </span>
+
           </div>
+
           <!-- End Header -->
 
+
+
           <!-- Order Summary Card -->
+
           <div class="flex flex-col">
+
             <div class="space-y-5">
+
               <!-- List -->
+
               <div class="space-y-2">
+
                 <!-- Item -->
+
                 <div class="tex4h hfud4 osjzw">
+
                   <div>
+
                     <span class="text-[13px] c4t4j">Subtotal</span>
+
                   </div>
+
+
 
                   <div class="qk13w">
+
                     <span class="ctc9x text-[13px] c4t4j" data-order-summary-value="subtotal">$229</span>
+
                   </div>
+
                 </div>
+
                 <!-- End Item -->
 
+
+
                 <!-- Item -->
+
                 <div>
+
                   <div class="tex4h hfud4 osjzw">
+
                     <div>
+
                       <span class="text-[13px] c4t4j">Shipping</span>
+
                     </div>
+
+
 
                     <div class="qk13w">
+
                       <span class="ctc9x text-[13px] c4t4j" data-order-summary-value="shipping">$0</span>
+
                     </div>
+
                   </div>
+
                 </div>
+
                 <!-- End Item -->
 
+
+
                 <!-- Item -->
+
                 <div class="tex4h hfud4 osjzw">
+
                   <div>
+
                     <span class="text-[13px] c4t4j">Estimated Tax</span>
+
                   </div>
 
+
+
                   <div class="flex r49qf">
+
                     <span class="ctc9x text-[13px] c4t4j" data-order-summary-value="estimated-tax">$0</span>
+
                   </div>
+
                 </div>
+
                 <!-- End Item -->
 
+
+
                 <!-- Item -->
+
                 <div class="tex4h hfud4 osjzw">
+
                   <div>
+
                     <span class="text-[13px] c4t4j">Promo code</span>
+
                   </div>
+
+
 
                   <div class="flex r49qf">
+
                     <span class="ctc9x text-[13px] c4t4j" data-order-summary-value="promo-discount">$0</span>
+
                   </div>
+
                 </div>
+
                 <!-- End Item -->
 
+
+
                 <!-- Item -->
+
                 <div class="tex4h hfud4 osjzw">
+
                   <div>
+
                     <span class="text-[13px] f1ztf">Sale</span>
+
                   </div>
 
+
+
                   <div class="qk13w">
+
                     <span class="ctc9x text-[13px] c4t4j" data-order-summary-value="sale">$0</span>
+
                   </div>
+
                 </div>
+
                 <!-- End Item -->
+
+
 
                 <!-- Item -->
+
                 <div class="tex4h hfud4 osjzw">
+
                   <div>
+
                     <span class="at2zb yymkp c4t4j">Total</span>
+
                   </div>
 
+
+
                   <div class="qk13w">
+
                     <span class="m859b c4t4j">USD</span>
+
                     <span class="ctc9x c4t4j" data-order-summary-value="total">$229</span>
+
                   </div>
+
                 </div>
+
                 <!-- End Item -->
+
               </div>
+
               <!-- End List -->
+
             </div>
+
           </div>
+
           <!-- End Order Summary Card -->
 
+
+
           <div class="i2fgn xyz4m r4caq mjfwa hl34b o1znl aqdwg">
+
             <!-- Cart Items List -->
+
             <div class="space-y-5" data-confirmation-order-items="true">
+
               <!-- Item -->
+
               <div class=" flex haw2c">
+
                 <div class="relative">
+
                   <img class="y6rh0 cr96u aruvj fy2yn edpyz" src="https://images.unsplash.com/photo-1699595749116-33a4a869503c?q=80&w=180&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Product Image">
+
                 </div>
 
+
+
                 <div class="t6ue9 flex flex-col">
+
                   <h4 class="yymkp c4t4j">
+
                     Nike Air Force 1
+
                   </h4>
 
+
+
                   <ul class="j9itz space-y-1">
+
                     <li class="m859b f1ztf">
+
                       Color: White
+
                     </li>
+
                     <li class="m859b f1ztf">
+
                       Size: M
+
                     </li>
+
                   </ul>
 
+
+
                   <p class="j9itz m859b f1ztf">
+
                     <span>Qty:</span>
+
                     <span>1</span>
+
                   </p>
 
+
+
                   <span class="j9itz yymkp c4t4j">
+
                     $150
+
                   </span>
+
                 </div>
+
               </div>
+
               <!-- End Item -->
 
+
+
               <!-- Item -->
+
               <div class=" flex haw2c">
+
                 <div class="relative">
+
                   <img class="y6rh0 cr96u aruvj fy2yn edpyz" src="https://images.unsplash.com/photo-1708443683334-1e41c52f33ac?q=80&w=180&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Product Image">
+
                 </div>
+
+
 
                 <div class="t6ue9 flex flex-col">
+
                   <h4 class="yymkp c4t4j">
+
                     Camo Blend Jacket
+
                   </h4>
 
+
+
                   <ul class="j9itz space-y-1">
+
                     <li class="m859b f1ztf">
+
                       Color: Camo
+
                     </li>
+
                     <li class="m859b f1ztf">
+
                       Size: M
+
                     </li>
+
                   </ul>
 
+
+
                   <p class="j9itz m859b f1ztf">
+
                     <span>Qty:</span>
+
                     <span>1</span>
+
                   </p>
+
                   <span class="j9itz">
+
                     <span class="yymkp f1ztf">
+
                       <s>$60</s>
+
                     </span>
+
                     <span class="yymkp pnjtm">
+
                       $40
+
                     </span>
+
                   </span>
+
                 </div>
+
               </div>
+
               <!-- End Item -->
 
+
+
               <!-- Item -->
+
               <div class=" flex haw2c">
+
                 <div class="relative">
+
                   <img class="y6rh0 cr96u aruvj fy2yn edpyz" src="https://images.unsplash.com/photo-1603218183500-7e1d62c3c679?q=80&w=180&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Product Image">
+
                 </div>
 
+
+
                 <div class="t6ue9 flex flex-col">
+
                   <h4 class="yymkp c4t4j">
+
                     Mahabis Classic
+
                   </h4>
 
+
+
                   <ul class="j9itz space-y-1">
+
                     <li class="m859b f1ztf">
+
                       Color: White
+
                     </li>
+
                     <li class="m859b f1ztf">
+
                       Size: M
+
                     </li>
+
                   </ul>
 
+
+
                   <p class="j9itz m859b f1ztf">
+
                     <span>Qty:</span>
+
                     <span>1</span>
+
                   </p>
+
+
 
                   <span class="j9itz yymkp c4t4j">
+
                     $39
+
                   </span>
+
                 </div>
+
               </div>
+
               <!-- End Item -->
+
             </div>
+
             <!-- End Cart Items List -->
+
           </div>
+
         </div>
+
         <!-- End Order Summary -->
+
       </div>
+
       <!-- End Grid -->
+
     </div>
+
   </main>
+
   <!-- ========== END MAIN CONTENT ========== -->
 
+
+
   <!-- JS PLUGINS -->
+
   <!-- Required plugins -->
+
   <script src="/js/index.js"></script>
+
   <!-- Clipboard -->
+
   <script src="/js/clipboard.min.js"></script>
+
   <script src="/js/hs-copy-clipboard-helper.js"></script>
 
+
+
   <script src="/js/hs-unavailable-color-themes.js"></script>
+
   <script>
+
     (function () {
+
       const unavailableColorThemes = window.HS_UNAVAILABLE_COLOR_THEMES;
 
+
+
       const pathname = window.location.pathname;
+
       let reducedThemes = [];
+
       let defaultTheme = "default";
+
       const themesDefaults = {
+
         "default": "blue",
+
         "harvest": "amber",
+
         "retro": "fuchsia",
+
         "ocean": "cyan",
+
         "autumn": "yellow",
+
         "moon": "gray",
+
         "bubblegum": "pink",
+
         "cashmere": "mauve",
+
         "olive": "avocado",
+
       };
+
       let defaultBrand = "blue";
+
       let defaultFont = "sans";
 
+
+
       let currentTheme = defaultTheme;
+
       let currentBrand = defaultBrand;
+
       let currentFont = defaultFont;
 
+
+
       for (const [key_i, value_i] of Object.entries(unavailableColorThemes)) {
+
         const { theme, excludes } = value_i;
 
+
+
         if (pathname.includes(key_i)) {
+
           defaultTheme = theme;
 
+
+
           if (Array.isArray(excludes)) {
+
             reducedThemes = excludes;
+
             break;
+
           } else {
+
             const result = [];
+
+
 
             if (excludes['*']) result.push(...excludes['*']);
 
+
+
             for (const [key_j, value_j] of Object.entries(excludes)) {
+
               if (key_j !== '*' && pathname.includes(key_j)) result.push(...value_j);
+
             }
 
+
+
             reducedThemes = result;
+
             break;
+
           }
+
         }
+
       }
 
+
+
       document.addEventListener('DOMContentLoaded', () => {
+
         (function () {
+
           const globalColorThemeSwitchers = document.querySelectorAll('[data-hs-global-color-theme] input[type="radio"]');
+
+
 
           if (!globalColorThemeSwitchers.length) return;
 
+
+
           const colorTheme = localStorage.getItem('hs-clipboard-theme');
+
           if (!colorTheme) localStorage.setItem("hs-clipboard-theme", defaultTheme);
+
           let predefinedColorTheme = null;
 
+
+
           globalColorThemeSwitchers.forEach((el) => {
+
             if (el.value === colorTheme && !reducedThemes.includes(el.value)) predefinedColorTheme = el;
 
+
+
             if (reducedThemes.includes(el.value)) {
+
               el.disabled = true;
+
               el.closest('.group').classList.add('my57n', 'rlfos');
+
             }
 
+
+
             el.addEventListener('change', (evt) => {
+
               const html = document.querySelector('html');
+
               const value = evt.target.value;
 
+
+
               localStorage.setItem('hs-clipboard-theme', value);
+
               html.setAttribute('data-theme', `theme-${value}`);
 
+
+
               window.dispatchEvent(new CustomEvent('on-hs-color-theme-change', {
+
                 detail: {
+
                   target: html,
+
                   value: value,
+
                 },
+
               }));
 
+
+
               currentTheme = value;
+
               currentBrand = themesDefaults[currentTheme];
 
+
+
               generateVariables(currentTheme, currentBrand);
+
+
+
 
 
               const themes = Array.from(document.querySelectorAll(`[data-hs-global-color-theme] input[value="${currentTheme}"]`));
+
               const brands = Array.from(document.querySelectorAll(`[data-hs-global-brand] input[value="${currentBrand}"]`));
 
+
+
               themes.filter((theme) => theme !== el).forEach((theme) => {
+
                 theme.checked = true;
+
               });
+
+
 
               brands.forEach((brand) => {
+
                 brand.checked = true;
+
               });
 
+
+
               brands[0].dispatchEvent(new Event("change", { bubbles: true }));
+
             });
+
           });
 
+
+
           if (!predefinedColorTheme) {
+
             predefinedColorTheme = Array.from(globalColorThemeSwitchers).find((el) => el.value === defaultTheme);
+
             predefinedColorTheme.checked = true;
+
           } else {
+
             predefinedColorTheme.checked = true;
+
           }
 
+
+
           currentTheme = predefinedColorTheme.value;
+
         })();
 
+
+
         (function () {
+
           const globalBrandSwitchers = document.querySelectorAll('[data-hs-global-brand] input[type="radio"]');
+
+
 
           if (!globalBrandSwitchers.length) return;
 
+
+
           let globalBrand = localStorage.getItem("hs-clipboard-brand") ?? themesDefaults[currentTheme];
+
           localStorage.setItem("hs-clipboard-brand", globalBrand);
+
           let predefinedBrand = null;
 
+
+
           globalBrandSwitchers.forEach((el) => {
+
             if (el.value === globalBrand) predefinedBrand = el;
 
+
+
             el.addEventListener('change', (evt) => {
+
               const html = document.querySelector('html');
+
               const value = evt.target.value;
 
+
+
               localStorage.setItem('hs-clipboard-brand', value);
+
               html.setAttribute('data-brand', value);
 
+
+
               window.dispatchEvent(new CustomEvent('on-hs-brand-change', {
+
                 detail: {
+
                   target: html,
+
                   value: value,
+
                 },
+
               }));
+
+
 
               currentBrand = value;
 
+
+
               generateVariables(currentTheme, currentBrand);
+
             });
+
           });
 
+
+
           if (!predefinedBrand) {
+
             predefinedBrand = Array.from(globalBrandSwitchers).find((el) => {
+
               console.log(el.value, globalBrand);
 
+
+
               return el.value === globalBrand;
+
             });
+
             predefinedBrand.checked = true;
+
           } else {
+
             predefinedBrand.checked = true;
+
           }
+
+
 
           currentBrand = predefinedBrand.value;
 
+
+
           generateVariables(currentTheme, currentBrand);
+
         })();
 
+
+
         (function () {
+
           const globalFontSwitchers = document.querySelectorAll('[data-hs-global-font] input[type="radio"]');
+
+
 
           if (!globalFontSwitchers.length) return;
 
+
+
           let globalFont = localStorage.getItem("hs-clipboard-font") ?? defaultFont;
+
           localStorage.setItem("hs-clipboard-font", globalFont);
+
           let predefinedFont = null;
 
+
+
           globalFontSwitchers.forEach((el) => {
+
             if (el.value === globalFont) predefinedFont = el;
 
+
+
             el.addEventListener('change', (evt) => {
+
               const html = document.querySelector('html');
+
               const value = evt.target.value;
 
+
+
               localStorage.setItem('hs-clipboard-font', value);
+
               html.setAttribute('data-font', value);
 
+
+
               window.dispatchEvent(new CustomEvent('on-hs-font-change', {
+
                 detail: {
+
                   target: html,
+
                   value: value,
+
                 },
+
               }));
 
+
+
               currentFont = value;
+
             });
+
           });
 
+
+
           if (!predefinedFont) {
+
             predefinedFont = Array.from(globalFontSwitchers).find((el) => {
+
               console.log(el.value, globalFont);
+
               return el.value === globalFont;
+
             });
+
             predefinedFont.checked = true;
+
           } else {
+
             predefinedFont.checked = true;
+
           }
 
+
+
           currentFont = predefinedFont.value;
+
         })();
+
       });
+
     })();
+
   </script>
+
+
 
   <footer class="mt-auto kr2el j0w5b absolute o6jzh mhm76 rvoqh r4caq qbzlc">
+
     <div class="w-full o3m6v p4mlo mx-auto cti9j gwqpr c4mnv">
+
       <ul class="flex flex-wrap lp3ls items-center offh6 oskez">
+
         <li class="inline-flex items-center relative m859b f1ztf jr33k qt51h last:after:hidden after:absolute after:top-1/2 after:end-0 after:inline-block after:size-[3px] after:bg-surface-3 after:rounded-full after:-translate-y-1/2">
+
           © 2026 Preline Labs.
+
         </li>
+
         <li class="inline-flex items-center relative m859b f1ztf jr33k qt51h last:after:hidden after:absolute after:top-1/2 after:end-0 after:inline-block after:size-[3px] after:bg-surface-3 after:rounded-full after:-translate-y-1/2">
+
           <a class="m859b f1ztf a8v2i lpc02 cihbd focus:outline-hidden jnkmc hj22m" href="#">
+
             Terms
+
           </a>
+
         </li>
+
         <li class="inline-flex items-center relative m859b f1ztf jr33k qt51h last:after:hidden after:absolute after:top-1/2 after:end-0 after:inline-block after:size-[3px] after:bg-surface-3 after:rounded-full after:-translate-y-1/2">
+
           <a class="m859b f1ztf a8v2i lpc02 cihbd focus:outline-hidden jnkmc hj22m" href="#">
+
             Privacy
+
           </a>
+
         </li>
+
         <li class="inline-flex items-center relative m859b f1ztf jr33k qt51h last:after:hidden after:absolute after:top-1/2 after:end-0 after:inline-block after:size-[3px] after:bg-surface-3 after:rounded-full after:-translate-y-1/2">
+
           <a class="m859b f1ztf a8v2i lpc02 cihbd focus:outline-hidden jnkmc hj22m" href="#">
+
             Your Privacy Choices
+
           </a>
+
         </li>
+
         <li class="inline-flex items-center relative m859b f1ztf jr33k qt51h last:after:hidden after:absolute after:top-1/2 after:end-0 after:inline-block after:size-[3px] after:bg-surface-3 after:rounded-full after:-translate-y-1/2">
+
           <button type="button" class="hs-dark-mode-active:hidden flex hs-dark-mode items-center i220p yymkp f1ztf cihbd focus:outline-hidden hj22m" data-hs-theme-click-value="dark">
+
             <svg class="y6rh0 x215h" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
               <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+
             </svg>
+
             <span class="rfrdb">Dark mode</span>
+
           </button>
+
           <button type="button" class="hs-dark-mode-active:flex hidden hs-dark-mode items-center i220p yymkp f1ztf cihbd focus:outline-hidden hj22m" data-hs-theme-click-value="light">
+
             <svg class="y6rh0 x215h" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
               <circle cx="12" cy="12" r="4"></circle>
+
               <path d="M12 2v2"></path>
+
               <path d="M12 20v2"></path>
+
               <path d="m4.93 4.93 1.41 1.41"></path>
+
               <path d="m17.66 17.66 1.41 1.41"></path>
+
               <path d="M2 12h2"></path>
+
               <path d="M20 12h2"></path>
+
               <path d="m6.34 17.66-1.41 1.41"></path>
+
               <path d="m19.07 4.93-1.41 1.41"></path>
+
             </svg>
+
             <span class="rfrdb">Light mode</span>
+
           </button>
+
         </li>
+
       </ul>
+
     </div>
+
   </footer>
 
+
+
   <script src="/js/confetti.browser.js"></script>
+
   <script>
+
     window.addEventListener('load', () => {
+
       confetti({
+
         particleCount: 100,
+
         spread: 70,
+
         origin: {
+
           y: 0.6
+
         }
+
       });
+
     });
+
   </script>
+
+
 
   <!-- JS THIRD PARTY PLUGINS -->
+
   <!-- Google Analytics. Global site b9v48 (gtag.js) -->
+
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-B73TDMXKF5"></script>
+
   <script>
+
     window.dataLayer = window.dataLayer || [];
+
   
+
     function gtag() {
+
       dataLayer.push(arguments);
+
     }
+
   
+
     gtag('js', new Date());
+
     gtag('config', 'G-B73TDMXKF5');
+
   </script>
 
+
+
                 <script>
+
                     window.defaultVariables = {"baseUrl":"https:\/\/preline.co"};
+
                 </script> <script src="/js/app.js"></script><script src="/js/header-standardizer.js?v=3"></script></body>
+
 </html>
+
