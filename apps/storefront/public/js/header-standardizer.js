@@ -15,6 +15,7 @@
   const ordersKey = "appOrders";
   const latestOrderKey = "appLatestOrder";
   const lookupOrderKey = "appLookupOrder";
+  const productReviewsKey = "appProductReviews";
   const decodedPathname = decodeURIComponent(window.location.pathname);
   let servicesPromise = null;
   let supabasePromise = null;
@@ -190,6 +191,124 @@
 
     const query = params.toString();
     return "./write-a-product-review.html" + (query ? "?" + query : "");
+  }
+
+  function normalizeReviewProductKey(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+  }
+
+  function getProductReviewKey(details) {
+    const slug = details && details.slug ? String(details.slug).trim() : "";
+    if (slug) return "slug:" + slug;
+
+    const title = details && details.title ? normalizeReviewProductKey(details.title) : "";
+    return title ? "title:" + title : "";
+  }
+
+  function getStoredProductReviews() {
+    const reviews = readJsonStorage(productReviewsKey, {});
+    return reviews && typeof reviews === "object" ? reviews : {};
+  }
+
+  function saveStoredProductReview(details, review) {
+    const key = getProductReviewKey(details);
+    if (!key || !review) return;
+
+    const reviewsByProduct = getStoredProductReviews();
+    const nextReviews = Array.isArray(reviewsByProduct[key]) ? reviewsByProduct[key].slice() : [];
+    nextReviews.unshift(review);
+    reviewsByProduct[key] = nextReviews.slice(0, 25);
+    writeJsonStorage(productReviewsKey, reviewsByProduct);
+  }
+
+  function getStoredReviewsForProduct(details) {
+    const key = getProductReviewKey(details);
+    if (!key) return [];
+
+    const reviewsByProduct = getStoredProductReviews();
+    return Array.isArray(reviewsByProduct[key]) ? reviewsByProduct[key] : [];
+  }
+
+  function formatReviewRelativeTime(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return "Just now";
+
+    const diffMs = date.getTime() - Date.now();
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+    if (Math.abs(diffMs) < hour) {
+      return rtf.format(Math.round(diffMs / minute), "minute");
+    }
+
+    if (Math.abs(diffMs) < day) {
+      return rtf.format(Math.round(diffMs / hour), "hour");
+    }
+
+    return rtf.format(Math.round(diffMs / day), "day");
+  }
+
+  function getRecommendationLabel(value) {
+    return value === "yes" ? "Highly recommended" : "Not recommended";
+  }
+
+  function renderProductReviewStars(rating) {
+    const total = 5;
+    const filledCount = Math.max(0, Math.min(total, Number(rating || 0)));
+    return Array.from({ length: total }, function (_, index) {
+      return [
+        '<svg class="y6rh0 xqxx6 s7mjk" fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">',
+        index < filledCount
+          ? '<path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>'
+          : '<path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z"></path>',
+        "</svg>",
+      ].join("");
+    }).join("");
+  }
+
+  function buildStoredReviewMarkup(review) {
+    const headline = escapeHtml(review.headline || "Customer review");
+    const body = escapeHtml(review.body || "");
+    const nickname = escapeHtml(review.nickname || "Guest");
+    const recommendation = escapeHtml(getRecommendationLabel(review.recommendation));
+    const relativeTime = escapeHtml(formatReviewRelativeTime(review.createdAt));
+    const helpfulYes = Number(review.helpfulYes || 0);
+    const helpfulNo = Number(review.helpfulNo || 0);
+
+    return [
+      '<div class="ggktd f3bmb e1azp apc4n y8a3d v77h5 u7zb2" data-generated-review="true">',
+      '<div class="flex items-center azl7k">',
+      renderProductReviewStars(review.rating),
+      '<span class="s5kuw m859b f1ztf">' + recommendation + "</span>",
+      "</div>",
+      '<div class="ljp3z flex flex-wrap g86xu items-center oskez">',
+      '<h3 class="ctc9x c4t4j">' + headline + "</h3>",
+      '<p class="text-[13px] f1ztf">' + relativeTime + "</p>",
+      "</div>",
+      '<p class="ljp3z yymkp c4t4j">' + body + "</p>",
+      '<div class="ylbo0 flex flex-wrap flex-col sm:flex-row etcpj sm:items-center osjzw">',
+      '<div class="flex items-center g26qa">',
+      '<h6 class="ctc9x yymkp c4t4j">' + nickname + "</h6>",
+      '<span class="m859b f1ztf">•</span>',
+      '<div class="inline-flex items-center jdzig">',
+      '<svg class="y6rh0 x215h f1ztf" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path></svg>',
+      '<p class="m859b f1ztf">Verified customer</p>',
+      "</div>",
+      "</div>",
+      '<div class="flex flex-wrap items-center oskez">',
+      '<span class="text-[13px] f1ztf">Helpful?</span>',
+      '<button class="flex items-center i220p text-[13px] f1ztf cihbd focus:outline-hidden" type="button"><svg class="y6rh0 xqxx6" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path></svg>(' + helpfulYes + ")</button>",
+      '<button class="flex items-center i220p text-[13px] f1ztf cihbd focus:outline-hidden" type="button"><svg class="y6rh0 xqxx6" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M17 14V2"></path><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"></path></svg>(' + helpfulNo + ")</button>",
+      '<button class="text-[13px] f1ztf carpj a8v2i cihbd focus:outline-hidden hj22m" type="button">Report</button>',
+      "</div>",
+      "</div>",
+      "</div>",
+    ].join("");
   }
 
   function normalizeCartItem(item, index) {
@@ -1638,6 +1757,101 @@
       });
   }
 
+  function bindWriteReviewForm() {
+    if (!isPage("write-a-product-review.html")) return;
+
+    const submitButton = Array.from(document.querySelectorAll("button"))
+      .find(function (button) {
+        return /submit review/i.test((button.textContent || "").trim());
+      });
+    const headlineField = document.getElementById("hs-pro-shwprmah");
+    const bodyField = document.getElementById("hs-pro-shwprmar");
+    const nicknameField = document.getElementById("hs-pro-shchfn");
+    const emailField = document.getElementById("hs-pro-shchfem");
+    const footer = submitButton ? submitButton.parentElement : null;
+
+    if (!submitButton || submitButton.dataset.reviewSubmitBound === "true") return;
+    submitButton.dataset.reviewSubmitBound = "true";
+
+    submitButton.addEventListener("click", function () {
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get("slug") || "";
+      const title = params.get("title") || "Product Detail";
+      const image = params.get("image") || "";
+      const recommendationField = document.querySelector('input[name="hs-pro-shprwrtp"]:checked');
+      const ratingField = document.querySelector('input[name="hs-pro-shprcm"]:checked');
+      const headline = headlineField ? headlineField.value.trim() : "";
+      const body = bodyField ? bodyField.value.trim() : "";
+      const nickname = nicknameField ? nicknameField.value.trim() : "";
+      const email = emailField ? emailField.value.trim() : "";
+
+      if (!headline || !body || !nickname || !email) {
+        showMessage(footer, "data-write-review-message", "Headline, review, nickname, and email are required.", "error");
+        return;
+      }
+
+      const rating = ratingField
+        ? Number(String(ratingField.id || "").replace(/[^0-9]+/g, "")) || 5
+        : 5;
+
+      saveStoredProductReview(
+        {
+          slug: slug,
+          title: title,
+        },
+        {
+          slug: slug,
+          title: title,
+          image: image,
+          headline: headline,
+          body: body,
+          nickname: nickname,
+          email: email,
+          recommendation: recommendationField && recommendationField.id === "hs-pro-shprwrtpn" ? "no" : "yes",
+          rating: rating,
+          helpfulYes: 0,
+          helpfulNo: 0,
+          createdAt: new Date().toISOString(),
+        },
+      );
+
+      showMessage(footer, "data-write-review-message", "Review submitted. Redirecting to product page...", "success");
+
+      const destination = slug
+        ? "./Product Detail.html?slug=" + encodeURIComponent(slug) + "#reviews"
+        : "./Product Detail.html#reviews";
+
+      window.setTimeout(function () {
+        window.location.href = destination;
+      }, 300);
+    });
+  }
+
+  function renderProductDetailStoredReviews() {
+    if (!isPage("Product Detail.html")) return;
+
+    const listRoot = document.querySelector("[data-product-review-list='true']");
+    const template = listRoot ? listRoot.querySelector("[data-product-review-template='true']") : null;
+    if (!listRoot || !template) return;
+
+    listRoot.querySelectorAll("[data-generated-review='true']").forEach(function (node) {
+      node.remove();
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const titleNode = document.getElementById("product-detail-title");
+    const reviews = getStoredReviewsForProduct({
+      slug: params.get("slug") || "",
+      title: titleNode ? titleNode.textContent.trim() : "",
+    });
+
+    if (!reviews.length) return;
+
+    const markup = reviews.map(buildStoredReviewMarkup).join("");
+    listRoot.insertAdjacentHTML("afterbegin", markup);
+  }
+
+
   function renderLatestOrderCard() {
     if (!isPage("My Orders.html")) return;
 
@@ -2260,6 +2474,8 @@
     bindOrderDetailsAddressModal();
     renderLatestOrderCard();
     renderWriteReviewProduct();
+    bindWriteReviewForm();
+    renderProductDetailStoredReviews();
     renderCartPage();
     normalizeCrossAppLinks();
     if (commerceStore && typeof commerceStore.applyStorefrontDiscountPromos === "function") {
