@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabaseAuthService } from "@siggistore/services/storefront/supabase-service";
 import { mountStorefrontIslands } from "./islands/mountStorefrontIslands.js";
 import {
+  applyStorefrontDiscountPromos,
   bindAddToCartButtons,
   bindFavoriteToggles,
   hydrateProductDataAttributes,
@@ -424,6 +425,7 @@ function initializeStorefrontRuntimeState() {
   updateFavoritesSummaryUI(document);
   renderFavoritesDropdown(document);
   updateCartSummaryUI(document);
+  applyStorefrontDiscountPromos(document, { forceRefresh: true });
 
   if (!window.__storefrontReactCommerceEventsBound) {
     window.__storefrontReactCommerceEventsBound = "true";
@@ -433,11 +435,13 @@ function initializeStorefrontRuntimeState() {
     });
     window.addEventListener("cart:update", () => {
       updateCartSummaryUI(document);
+      applyStorefrontDiscountPromos(document, { forceRefresh: true });
     });
     window.addEventListener("storage", () => {
       updateFavoritesSummaryUI(document);
       renderFavoritesDropdown(document);
       updateCartSummaryUI(document);
+      applyStorefrontDiscountPromos(document, { forceRefresh: true });
     });
   }
 }

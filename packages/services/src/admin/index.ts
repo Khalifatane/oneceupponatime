@@ -18,6 +18,7 @@ export {
   fetchOrderItemsByOrderIds,
   updateOrderStatus,
   fetchDiscounts,
+  createDiscount,
   fetchProductRuntime,
   fetchProductRuntimeByIds,
   mergeProductWithRuntime,

@@ -1,8 +1,9 @@
-import { fetchDiscounts } from "@siggistore/services/admin";
+import { createDiscount, fetchDiscounts } from "@siggistore/services/admin";
 import { subscribeToDiscounts } from "@siggistore/services/admin/realtime.js";
 import { createTableUrlState } from "@siggistore/services/admin/table-state.js";
 
 const PAGE_SIZE = 10;
+const STOREFRONT_PROMOTION_STORAGE_KEY = "siggistore-storefront-promo-discount";
 const tableState = createTableUrlState({
   defaultPage: 1,
   defaultPageSize: PAGE_SIZE,
@@ -55,6 +56,304 @@ function formatDiscountValue(discount) {
   if (type.includes("percent")) return `${safeValue}%`;
   if (safeValue === 0 && discount.value == null && discount.amount == null) return "N/A";
   return `$${safeValue}`;
+}
+
+function formatDateLabel(date) {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatDateStorageValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function generateDiscountCode(length = 8) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length }, () =>
+    alphabet[Math.floor(Math.random() * alphabet.length)],
+  ).join("");
+}
+
+function normalizeDateValue(rawValue) {
+  if (!rawValue) return null;
+  const date = new Date(`${rawValue}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function setFeedback(feedbackNode, message, type = "error") {
+  if (!feedbackNode) return;
+
+  if (!message) {
+    feedbackNode.textContent = "";
+    feedbackNode.className = "hidden cti9j m859b edpyz";
+    return;
+  }
+
+  const toneClass =
+    type === "success"
+      ? "cti9j m859b edpyz at2zb qn8tw dark:text-green-500"
+      : "cti9j m859b edpyz at2zb olwac dark:text-red-500";
+
+  feedbackNode.textContent = message;
+  feedbackNode.className = toneClass;
+}
+
+function setButtonBusy(button, isBusy, idleText, busyText) {
+  if (!button) return;
+  button.disabled = isBusy;
+  button.textContent = isBusy ? busyText : idleText;
+}
+
+function safeWriteJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn("Unable to write storage key.", key, error);
+  }
+}
+
+function safeRemoveStorageItem(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn("Unable to remove storage key.", key, error);
+  }
+}
+
+function isDiscountWithinSchedule(discount, now = new Date()) {
+  const start = discount?.starts_at ? new Date(discount.starts_at) : null;
+  const end = discount?.ends_at ? new Date(discount.ends_at) : null;
+
+  if (start && !Number.isNaN(start.getTime()) && start > now) return false;
+  if (end && !Number.isNaN(end.getTime()) && end < now) return false;
+  return true;
+}
+
+function isGlobalDiscount(discount) {
+  const scope = String(discount?.scope ?? discount?.applies_to ?? "").toLowerCase().trim();
+  if (!scope) return true;
+  return ["global", "all", "all products", "sitewide", "storewide"].includes(scope);
+}
+
+function syncStorefrontPromotionSnapshot(discount) {
+  if (!discount) {
+    safeRemoveStorageItem(STOREFRONT_PROMOTION_STORAGE_KEY);
+    return;
+  }
+
+  safeWriteJson(STOREFRONT_PROMOTION_STORAGE_KEY, {
+    savedAt: new Date().toISOString(),
+    discount,
+  });
+}
+
+function syncLatestPublishedDiscount(discounts) {
+  const now = new Date();
+  const activeGlobalDiscount = (discounts || []).find(
+    (discount) =>
+      String(discount?.status ?? "").toLowerCase() === "active" &&
+      isGlobalDiscount(discount) &&
+      isDiscountWithinSchedule(discount, now),
+  );
+
+  syncStorefrontPromotionSnapshot(activeGlobalDiscount || null);
+}
+
+function updateDateButtonLabel(button, label) {
+  if (!button) return;
+
+  const iconMarkup = button.querySelector("svg")?.outerHTML || "";
+  button.innerHTML = `${label} ${iconMarkup}`;
+}
+
+function wireDateDropdown(triggerButton) {
+  if (!triggerButton) return;
+
+  const defaultLabel = triggerButton.textContent.trim().replace(/\s+/g, " ");
+  triggerButton.dataset.defaultLabel = defaultLabel;
+
+  const dropdown = triggerButton.closest(".hs-dropdown");
+  if (!dropdown) return;
+
+  const selects = dropdown.querySelectorAll('select[data-hs-select]');
+  const monthSelect = selects[0];
+  const yearSelect = selects[1];
+  const dayButtons = dropdown.querySelectorAll(
+    ".hs-dropdown-menu button.c3o5j.oh9ou:not([disabled])",
+  );
+
+  dayButtons.forEach((button) => {
+    if (button.getAttribute("aria-label") === "Previous") return;
+    if (button.getAttribute("aria-label") === "Next") return;
+
+    button.addEventListener("click", () => {
+      const monthIndex = Number(monthSelect?.value ?? 0);
+      const year = Number(yearSelect?.value ?? new Date().getFullYear());
+      const day = Number(button.textContent.trim());
+      const nextDate = new Date(year, monthIndex, day);
+
+      if (Number.isNaN(nextDate.getTime())) return;
+
+      triggerButton.dataset.selectedValue = formatDateStorageValue(nextDate);
+      updateDateButtonLabel(triggerButton, formatDateLabel(nextDate));
+    });
+  });
+}
+
+function setupDiscountForm(render) {
+  const overlay = document.querySelector("#hs-pro-edmad");
+  const nameInput = document.querySelector("#hs-pro-eadmnm");
+  const codeInput = document.querySelector("#hs-pro-eadmcd");
+  const amountInput = document.querySelector("#hs-pro-eadmam");
+  const typeSelect = document.querySelector("#hs-pro-eadmty");
+  const startButton = document.querySelector("#hs-pro-eadmsd");
+  const endButton = document.querySelector("#hs-pro-eadmed");
+  const usageLimitInput = document.querySelector("#hs-pro-eadmln");
+  const generateButton = document.querySelector("#hs-pro-eadmcd-generate");
+  const saveDraftButton = document.querySelector("#hs-pro-edmad-save-draft");
+  const publishButton = document.querySelector("#hs-pro-edmad-publish");
+  const feedbackNode = document.querySelector("#hs-pro-edmad-feedback");
+  const closeButton = overlay?.querySelector('[aria-label="Close"]');
+
+  if (
+    !overlay ||
+    !nameInput ||
+    !codeInput ||
+    !amountInput ||
+    !typeSelect ||
+    !startButton ||
+    !endButton ||
+    !usageLimitInput ||
+    !saveDraftButton ||
+    !publishButton
+  ) {
+    return;
+  }
+
+  wireDateDropdown(startButton);
+  wireDateDropdown(endButton);
+
+  function resetForm() {
+    nameInput.value = "";
+    codeInput.value = generateDiscountCode();
+    amountInput.value = "10";
+    typeSelect.value = "%";
+    usageLimitInput.value = "";
+
+    delete startButton.dataset.selectedValue;
+    delete endButton.dataset.selectedValue;
+    updateDateButtonLabel(startButton, startButton.dataset.defaultLabel || "Select start date");
+    updateDateButtonLabel(endButton, endButton.dataset.defaultLabel || "Select end date");
+
+    setFeedback(feedbackNode, "");
+    window.HSStaticMethods?.autoInit?.();
+  }
+
+  function getDiscountType() {
+    return typeSelect.value === "$" ? "fixed" : "percent";
+  }
+
+  function readFormPayload(status) {
+    const name = nameInput.value.trim();
+    const code = codeInput.value.trim().toUpperCase();
+    const amount = Number.parseFloat(amountInput.value.trim());
+    const usageLimit = usageLimitInput.value.trim();
+    const startsAt = normalizeDateValue(startButton.dataset.selectedValue);
+    const endsAt = normalizeDateValue(endButton.dataset.selectedValue);
+
+    if (!name) throw new Error("Discount name is required.");
+    if (!code) throw new Error("Discount code is required.");
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error("Discount amount must be greater than 0.");
+    }
+    if (startsAt && endsAt && new Date(startsAt) > new Date(endsAt)) {
+      throw new Error("End date must be on or after the start date.");
+    }
+    if (usageLimit) {
+      const parsedLimit = Number.parseInt(usageLimit, 10);
+      if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
+        throw new Error("Usage limit must be a positive whole number.");
+      }
+    }
+
+    return {
+      name,
+      code,
+      status,
+      type: getDiscountType(),
+      value: amount,
+      scope: "global",
+      starts_at: startsAt,
+      ends_at: endsAt,
+      usage_limit: usageLimit ? Number.parseInt(usageLimit, 10) : null,
+    };
+  }
+
+  async function submitDiscount(status) {
+    try {
+      setFeedback(feedbackNode, "");
+      saveDraftButton.disabled = true;
+      publishButton.disabled = true;
+      setButtonBusy(saveDraftButton, status === "draft", "Save as draft", "Saving...");
+      setButtonBusy(publishButton, status === "active", "Publish discount", "Publishing...");
+
+      const payload = readFormPayload(status);
+      const createdDiscount = await createDiscount(payload);
+
+      if (status === "active") {
+        syncStorefrontPromotionSnapshot(createdDiscount || payload);
+      }
+
+      setFeedback(
+        feedbackNode,
+        status === "active"
+          ? "Discount published successfully."
+          : "Discount saved as draft.",
+        "success",
+      );
+
+      await render();
+      resetForm();
+      closeButton?.click();
+    } catch (error) {
+      console.error("Failed to create discount", error);
+      setFeedback(
+        feedbackNode,
+        error?.message || "Unable to create the discount right now.",
+      );
+    } finally {
+      saveDraftButton.disabled = false;
+      publishButton.disabled = false;
+      setButtonBusy(saveDraftButton, false, "Save as draft", "Saving...");
+      setButtonBusy(publishButton, false, "Publish discount", "Publishing...");
+    }
+  }
+
+  generateButton?.addEventListener("click", () => {
+    codeInput.value = generateDiscountCode();
+  });
+
+  codeInput.addEventListener("blur", () => {
+    codeInput.value = codeInput.value.trim().toUpperCase();
+  });
+
+  saveDraftButton.addEventListener("click", () => {
+    submitDiscount("draft");
+  });
+
+  publishButton.addEventListener("click", () => {
+    submitDiscount("active");
+  });
+
+  resetForm();
 }
 
 function buildEmptyRow(message, colspan = 8) {
@@ -165,6 +464,10 @@ async function initDiscountsPage() {
         query,
       });
 
+      if (!query) {
+        syncLatestPublishedDiscount(discounts);
+      }
+
       const totalResults = discounts.length;
       const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
       const safePage = Math.min(Math.max(page, 1), totalPages);
@@ -236,6 +539,7 @@ async function initDiscountsPage() {
     unsubscribe?.();
   });
 
+  setupDiscountForm(render);
   await render();
 }
 

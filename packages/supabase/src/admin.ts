@@ -306,8 +306,112 @@ export async function fetchDiscounts(options: any = {}) {
   request = applyRange(request, limit, offset);
 
   const { data, error } = await request;
-  if (error) throw error;
+  if (error) {
+    if (isMissingDiscountsTableError(error)) {
+      console.warn('[supabase-admin] public.discounts is missing; returning an empty discount list.');
+      return [];
+    }
+    throw error;
+  }
   return data ?? [];
+}
+
+function isMissingDiscountsTableError(error: any) {
+  const details = [error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .map(String)
+    .join(' ');
+
+  return (
+    error?.code === '42P01' ||
+    /Could not find the table ['"]?public\.discounts['"]? in the schema cache/i.test(details) ||
+    /relation ['"]?public\.discounts['"]? does not exist/i.test(details) ||
+    /relation ['"]?discounts['"]? does not exist/i.test(details)
+  );
+}
+
+function parseMissingColumn(error: any) {
+  const details = [error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .map(String)
+    .join(' ');
+
+  const patterns = [
+    /column ["']?([a-zA-Z0-9_]+)["']? does not exist/i,
+    /Could not find the ['"]([a-zA-Z0-9_]+)['"] column/i,
+    /schema cache.*column ['"]([a-zA-Z0-9_]+)['"]/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = details.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
+export async function createDiscount(input: any = {}) {
+  const now = new Date().toISOString();
+  const value = Number(input.value ?? input.amount ?? 0);
+
+  if (!input.name || !String(input.name).trim()) {
+    throw new Error('Discount name is required.');
+  }
+  if (!input.code || !String(input.code).trim()) {
+    throw new Error('Discount code is required.');
+  }
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error('Discount amount must be greater than 0.');
+  }
+
+  const payload: Record<string, any> = {
+    name: String(input.name).trim(),
+    title: String(input.name).trim(),
+    code: String(input.code).trim().toUpperCase(),
+    status: String(input.status ?? 'draft').toLowerCase(),
+    type: String(input.type ?? 'percent').toLowerCase(),
+    value,
+    amount: value,
+    scope: String(input.scope ?? 'global'),
+    applies_to: String(input.scope ?? 'global'),
+    usage_count: Number(input.usage_count ?? 0) || 0,
+    updated_at: now,
+    created_at: input.created_at ?? now,
+  };
+
+  if (input.starts_at) payload.starts_at = input.starts_at;
+  if (input.ends_at) payload.ends_at = input.ends_at;
+
+  const usageLimit = Number(input.usage_limit);
+  if (Number.isFinite(usageLimit) && usageLimit > 0) {
+    payload.usage_limit = usageLimit;
+  }
+
+  const triedMissingColumns = new Set<string>();
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('discounts')
+      .insert(payload)
+      .select('*')
+      .single();
+
+    if (!error) return data;
+
+    if (isMissingDiscountsTableError(error)) {
+      throw new Error(
+        'The Supabase table public.discounts does not exist yet. Create it before using discount creation.',
+      );
+    }
+
+    const missingColumn = parseMissingColumn(error);
+    if (!missingColumn || !(missingColumn in payload) || triedMissingColumns.has(missingColumn)) {
+      throw error;
+    }
+
+    triedMissingColumns.add(missingColumn);
+    delete payload[missingColumn];
+  }
 }
 
 // ===== CONVERSATIONS =====

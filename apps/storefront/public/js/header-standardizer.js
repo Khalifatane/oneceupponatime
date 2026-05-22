@@ -2262,6 +2262,9 @@
     renderWriteReviewProduct();
     renderCartPage();
     normalizeCrossAppLinks();
+    if (commerceStore && typeof commerceStore.applyStorefrontDiscountPromos === "function") {
+      commerceStore.applyStorefrontDiscountPromos(document, { forceRefresh: true });
+    }
   }
 
   async function initializeHeader() {
@@ -2309,6 +2312,9 @@
     if (isPage("Cart.html")) {
       renderCartPage();
     }
+    if (commerceStore && typeof commerceStore.applyStorefrontDiscountPromos === "function") {
+      commerceStore.applyStorefrontDiscountPromos(document, { forceRefresh: true });
+    }
     normalizeCrossAppLinks();
   });
 
@@ -2323,6 +2329,9 @@
     renderSanityProductCarousel();
     updateFavoritesSummary();
     updateCartSummaries();
+    if (commerceStore && typeof commerceStore.applyStorefrontDiscountPromos === "function") {
+      commerceStore.applyStorefrontDiscountPromos(document, { forceRefresh: true });
+    }
     normalizeCrossAppLinks();
   });
 })();

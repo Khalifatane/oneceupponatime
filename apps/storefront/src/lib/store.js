@@ -1,7 +1,15 @@
+import { fetchDiscounts } from "@siggistore/services/admin";
+
 export const CART_KEY = "appCartItems";
 export const FAVORITES_KEY = "appFavorites";
 export const CART_UPDATE_EVENT = "cart:update";
 export const FAVORITES_UPDATE_EVENT = "favorites:update";
+export const STOREFRONT_PROMOTION_STORAGE_KEY = "siggistore-storefront-promo-discount";
+
+let storefrontPromotionPromise = null;
+let storefrontPromotionCache = null;
+let storefrontPromotionFetchedAt = 0;
+const STOREFRONT_PROMOTION_TTL_MS = 60 * 1000;
 
 function safeReadJson(key, fallback) {
   try {
@@ -17,12 +25,227 @@ function safeWriteJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function safeRemoveStorageItem(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn("Unable to remove storage key.", key, error);
+  }
+}
+
 function dispatchStoreEvent(name, detail) {
   window.dispatchEvent(new CustomEvent(name, { detail }));
 }
 
 function getLabelText(element) {
   return (element.textContent || "").trim();
+}
+
+function isDiscountWithinSchedule(discount, now = new Date()) {
+  const start = discount?.starts_at ? new Date(discount.starts_at) : null;
+  const end = discount?.ends_at ? new Date(discount.ends_at) : null;
+
+  if (start && !Number.isNaN(start.getTime()) && start > now) return false;
+  if (end && !Number.isNaN(end.getTime()) && end < now) return false;
+  return true;
+}
+
+function isGlobalDiscount(discount) {
+  const scope = String(discount?.scope ?? discount?.applies_to ?? "").toLowerCase().trim();
+  if (!scope) return true;
+  return ["global", "all", "all products", "sitewide", "storewide"].includes(scope);
+}
+
+function formatPromoValue(discount) {
+  const rawValue = Number(discount?.value ?? discount?.amount ?? 0);
+  const safeValue = Number.isFinite(rawValue) ? rawValue : 0;
+  const type = String(discount?.type ?? "").toLowerCase();
+
+  if (type.includes("percent")) return `${safeValue}% off`;
+  return `$${safeValue} off`;
+}
+
+function formatPromoEndDate(discount) {
+  if (!discount?.ends_at) return "";
+  const date = new Date(discount.ends_at);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function buildStorefrontPromotion(discount) {
+  if (!discount) return null;
+
+  const name = String(discount.name ?? discount.title ?? "Seasonal Sale").trim();
+  const code = String(discount.code ?? "").trim().toUpperCase();
+  const promoValue = formatPromoValue(discount);
+  const endDate = formatPromoEndDate(discount);
+
+  const defaultHeroHeadline = String(discount?.type ?? "").toLowerCase().includes("percent")
+    ? `Up to ${promoValue.replace(/\s+off$/i, "")}`
+    : `Save ${promoValue.replace(/\s+off$/i, "")}`;
+
+  return {
+    badge: discount.promo_badge || promoValue,
+    title: discount.promo_title || name,
+    href: discount.promo_href || "./Product Listing.html",
+    ctaLabel: discount.promo_cta_label || "Shop now",
+    slides: [
+      discount.headline_1 || `${promoValue} on selected items`,
+      discount.headline_2 || (code ? `Use code ${code} at checkout` : `${name} is live now`),
+      discount.headline_3 || (endDate ? `${name} ends ${endDate}` : `${name} is live now`),
+    ],
+    heroEyebrow: discount.hero_eyebrow || name,
+    heroHeadline: discount.hero_headline || defaultHeroHeadline,
+    shippingHeadline: discount.shipping_headline || `${name} is live now`,
+    giftHeadline: discount.gift_headline || (code ? `Use code ${code}` : name),
+    giftBody:
+      discount.gift_body ||
+      (code
+        ? `Save ${promoValue.toLowerCase()} with code ${code}.`
+        : `Save ${promoValue.toLowerCase()} while this offer lasts.`),
+  };
+}
+
+function isActiveGlobalDiscount(discount, now = new Date()) {
+  return (
+    discount &&
+    String(discount?.status ?? "").toLowerCase() === "active" &&
+    isGlobalDiscount(discount) &&
+    isDiscountWithinSchedule(discount, now)
+  );
+}
+
+function readPersistedPromotionDiscount() {
+  const snapshot = safeReadJson(STOREFRONT_PROMOTION_STORAGE_KEY, null);
+  return snapshot?.discount ?? snapshot ?? null;
+}
+
+export function persistStorefrontPromotionDiscount(discount) {
+  if (!discount) {
+    storefrontPromotionCache = null;
+    storefrontPromotionFetchedAt = Date.now();
+    safeRemoveStorageItem(STOREFRONT_PROMOTION_STORAGE_KEY);
+    return null;
+  }
+
+  safeWriteJson(STOREFRONT_PROMOTION_STORAGE_KEY, {
+    savedAt: new Date().toISOString(),
+    discount,
+  });
+
+  storefrontPromotionCache = buildStorefrontPromotion(discount);
+  storefrontPromotionFetchedAt = Date.now();
+  return storefrontPromotionCache;
+}
+
+export async function getStorefrontPromotion(options = {}) {
+  const now = Date.now();
+  const canReuseCache =
+    !options.forceRefresh &&
+    storefrontPromotionCache !== null &&
+    now - storefrontPromotionFetchedAt < STOREFRONT_PROMOTION_TTL_MS;
+
+  if (canReuseCache) {
+    return storefrontPromotionCache;
+  }
+
+  if (!options.forceRefresh && storefrontPromotionPromise) {
+    return storefrontPromotionPromise;
+  }
+
+  const persistedDiscount = readPersistedPromotionDiscount();
+  if (!options.ignorePersisted && isActiveGlobalDiscount(persistedDiscount)) {
+    storefrontPromotionCache = buildStorefrontPromotion(persistedDiscount);
+    storefrontPromotionFetchedAt = now;
+    return storefrontPromotionCache;
+  }
+
+  storefrontPromotionPromise = fetchDiscounts({ limit: 100, status: "active" })
+    .then((discounts) => {
+      const currentTime = new Date();
+      const activeGlobalDiscount = (discounts || []).find(
+        (discount) => isActiveGlobalDiscount(discount, currentTime),
+      );
+
+      if (activeGlobalDiscount) {
+        persistStorefrontPromotionDiscount(activeGlobalDiscount);
+      } else {
+        persistStorefrontPromotionDiscount(null);
+      }
+
+      storefrontPromotionFetchedAt = Date.now();
+      return storefrontPromotionCache;
+    })
+    .catch((error) => {
+      console.warn("Unable to fetch storefront promotion.", error);
+      storefrontPromotionCache = null;
+      storefrontPromotionFetchedAt = Date.now();
+      return null;
+    })
+    .finally(() => {
+      storefrontPromotionPromise = null;
+    });
+
+  return storefrontPromotionPromise;
+}
+
+export async function applyStorefrontDiscountPromos(root = document, options = {}) {
+  const scope = root || document;
+  const promotion = await getStorefrontPromotion(options);
+  if (!promotion) return null;
+
+  scope.querySelectorAll("[data-storefront-promo-slide]").forEach((node, index) => {
+    node.textContent = promotion.slides[index] || promotion.slides[promotion.slides.length - 1] || "";
+  });
+
+  scope.querySelectorAll("[data-storefront-promo-card-badge]").forEach((node) => {
+    node.textContent = promotion.badge;
+  });
+
+  scope.querySelectorAll("[data-storefront-promo-card-title]").forEach((node) => {
+    node.textContent = promotion.title;
+  });
+
+  scope.querySelectorAll("[data-storefront-promo-card-cta]").forEach((node) => {
+    const firstChild = node.firstChild;
+    if (firstChild && firstChild.nodeType === Node.TEXT_NODE) {
+      firstChild.nodeValue = `${promotion.ctaLabel} `;
+      return;
+    }
+    node.textContent = promotion.ctaLabel;
+  });
+
+  scope.querySelectorAll("[data-storefront-promo-card-link]").forEach((node) => {
+    if (node.tagName === "A") {
+      node.setAttribute("href", promotion.href);
+    }
+  });
+
+  scope.querySelectorAll("[data-storefront-hero-eyebrow]").forEach((node) => {
+    node.textContent = promotion.heroEyebrow;
+  });
+
+  scope.querySelectorAll("[data-storefront-hero-headline]").forEach((node) => {
+    node.textContent = promotion.heroHeadline;
+  });
+
+  scope.querySelectorAll("[data-storefront-shipping-headline]").forEach((node) => {
+    node.textContent = promotion.shippingHeadline;
+  });
+
+  scope.querySelectorAll("[data-storefront-gift-headline]").forEach((node) => {
+    node.textContent = promotion.giftHeadline;
+  });
+
+  scope.querySelectorAll("[data-storefront-gift-body]").forEach((node) => {
+    node.textContent = promotion.giftBody;
+  });
+
+  return promotion;
 }
 
 export function parsePrice(value) {
