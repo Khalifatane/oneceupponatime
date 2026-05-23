@@ -12,6 +12,7 @@ export {
   supabaseProfileService,
   supabaseOrderService,
   supabaseCartService,
+  supabaseDiscountService,
   supabaseReviewService,
 } from './supabase-service';
 export { default as sanityService } from './sanity-service';

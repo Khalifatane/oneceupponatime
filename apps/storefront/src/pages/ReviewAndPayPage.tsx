@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import reviewAndPayData from '@/data/review-and-pay.json'
+import OrderSummaryCard from '@/components/OrderSummaryCard'
 
 export default function ReviewAndPayPage() {
   const { steps, backLink, sections, orderSummary, payButton } = reviewAndPayData
@@ -89,41 +90,14 @@ export default function ReviewAndPayPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="border rounded-lg p-6 sticky top-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Order Summary</h2>
-              <Link to={orderSummary.editCartLink} className="text-sm text-gray-500 hover:text-black">Edit</Link>
-            </div>
-            <div className="flex gap-2 mb-4">
-              <input type="text" placeholder={orderSummary.promoCode.placeholder} className="flex-1 border rounded px-3 py-2 text-sm" />
-              <button className="px-4 py-2 border rounded text-sm hover:bg-gray-50">{orderSummary.promoCode.buttonText}</button>
-            </div>
-            <div className="space-y-3 text-sm mb-6">
-              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>${orderSummary.subtotal}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="text-green-600">{orderSummary.shipping}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Estimated Tax</span><span>{orderSummary.estimatedTax}</span></div>
-              {orderSummary.saleDiscount !== null && (
-                <div className="flex justify-between text-red-600"><span>Sale discount</span><span>${orderSummary.saleDiscount}</span></div>
-              )}
-              <div className="flex justify-between font-semibold text-base pt-3 border-t">
-                <span>Total</span>
-                <span>{orderSummary.currency === 'USD' && '$'}{orderSummary.total} {orderSummary.currency}</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {orderSummary.items.map((item: any, i: number) => (
-                <div key={i} className="flex gap-3">
-                  <div className="w-16 h-20 bg-gray-100 rounded flex-shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-gray-500">{item.color} / {item.size}</p>
-                    <p className="text-gray-500">Qty: {item.quantity}</p>
-                    <p className="font-medium">${item.price}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <OrderSummaryCard
+            editCartLink={orderSummary.editCartLink}
+            currency={orderSummary.currency}
+            shippingLabel={orderSummary.shipping}
+            estimatedTaxLabel={orderSummary.estimatedTax}
+            promoPlaceholder={orderSummary.promoCode.placeholder}
+            promoButtonText={orderSummary.promoCode.buttonText}
+          />
         </div>
       </div>
     </main>

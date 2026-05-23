@@ -15,6 +15,55 @@ import type {
 
 const supabase = getSupabase();
 
+function isMissingTableError(error: any, tableName: string) {
+  const details = [error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .map(String)
+    .join(' ');
+
+  return (
+    error?.code === '42P01' ||
+    new RegExp(`Could not find the table ['"]?public\\.${tableName}['"]? in the schema cache`, 'i').test(details) ||
+    new RegExp(`relation ['"]?public\\.${tableName}['"]? does not exist`, 'i').test(details) ||
+    new RegExp(`relation ['"]?${tableName}['"]? does not exist`, 'i').test(details)
+  );
+}
+
+function isDiscountWithinSchedule(discount: any, now = new Date()) {
+  const start = discount?.starts_at ? new Date(discount.starts_at) : null;
+  const end = discount?.ends_at ? new Date(discount.ends_at) : null;
+
+  if (start && !Number.isNaN(start.getTime()) && start > now) return false;
+  if (end && !Number.isNaN(end.getTime()) && end < now) return false;
+  return true;
+}
+
+function isGlobalDiscount(discount: any) {
+  const scope = String(discount?.scope ?? discount?.applies_to ?? '')
+    .toLowerCase()
+    .trim();
+
+  if (!scope) return true;
+  return ['global', 'all', 'all products', 'sitewide', 'storewide'].includes(scope);
+}
+
+function normalizeDiscountRow(row: any) {
+  if (!row) return row;
+  return {
+    ...row,
+    code: String(row.code ?? '').trim().toUpperCase(),
+    status: String(row.status ?? 'draft').trim().toLowerCase(),
+    type: String(row.type ?? 'percent').trim().toLowerCase(),
+    value: Number(row.value ?? row.amount ?? 0) || 0,
+    amount: Number(row.amount ?? row.value ?? 0) || 0,
+    usage_limit:
+      row.usage_limit == null || row.usage_limit === ''
+        ? null
+        : Number(row.usage_limit) || null,
+    usage_count: Number(row.usage_count ?? 0) || 0,
+  };
+}
+
 export const supabaseAuthService = {
   async signUp(email: string, password: string): Promise<ApiResponse<SupabaseUser>> {
     const result = await signUp(email, password);
@@ -230,18 +279,72 @@ export const supabaseCartService = {
 };
 
 function isMissingReviewTableError(error: any, tableName: string) {
-  const details = [error?.message, error?.details, error?.hint]
-    .filter(Boolean)
-    .map(String)
-    .join(' ');
-
-  return (
-    error?.code === '42P01' ||
-    new RegExp(`Could not find the table ['"]?public\\.${tableName}['"]? in the schema cache`, 'i').test(details) ||
-    new RegExp(`relation ['"]?public\\.${tableName}['"]? does not exist`, 'i').test(details) ||
-    new RegExp(`relation ['"]?${tableName}['"]? does not exist`, 'i').test(details)
-  );
+  return isMissingTableError(error, tableName);
 }
+
+export const supabaseDiscountService = {
+  async validateDiscountCode(details: {
+    code?: string | null;
+  }): Promise<ApiResponse<any>> {
+    try {
+      const code = String(details?.code ?? '').trim().toUpperCase();
+      if (!code) {
+        return { success: false, error: 'Enter a discount code first.' };
+      }
+
+      const { data, error } = await supabase
+        .from('discounts')
+        .select('*')
+        .eq('code', code)
+        .limit(1);
+
+      if (error) {
+        if (isMissingTableError(error, 'discounts')) {
+          return {
+            success: false,
+            error:
+              'The Supabase table public.discounts does not exist yet. Create it before using discounts.',
+          };
+        }
+        return { success: false, error: error.message };
+      }
+
+      const discount = normalizeDiscountRow((data || [])[0]);
+      if (!discount) {
+        return { success: false, error: 'That discount code could not be found.' };
+      }
+
+      if (discount.status !== 'active') {
+        return { success: false, error: 'That discount code is not active yet.' };
+      }
+
+      if (!isDiscountWithinSchedule(discount)) {
+        return { success: false, error: 'That discount code is outside its active dates.' };
+      }
+
+      if (!isGlobalDiscount(discount)) {
+        return { success: false, error: 'That discount code is not available for this order.' };
+      }
+
+      if (
+        discount.usage_limit !== null &&
+        discount.usage_limit > 0 &&
+        discount.usage_count >= discount.usage_limit
+      ) {
+        return { success: false, error: 'That discount code has reached its usage limit.' };
+      }
+
+      return {
+        success: true,
+        data: {
+          discount,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  },
+};
 
 function normalizeReviewRow(row: any) {
   if (!row) return row;
@@ -390,5 +493,6 @@ export default {
   profile: supabaseProfileService,
   order: supabaseOrderService,
   cart: supabaseCartService,
+  discount: supabaseDiscountService,
   review: supabaseReviewService,
 };

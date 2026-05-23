@@ -4,6 +4,8 @@ export const CART_KEY = "appCartItems";
 export const FAVORITES_KEY = "appFavorites";
 export const CART_UPDATE_EVENT = "cart:update";
 export const FAVORITES_UPDATE_EVENT = "favorites:update";
+export const APPLIED_DISCOUNT_KEY = "appAppliedDiscount";
+export const DISCOUNT_UPDATE_EVENT = "discount:update";
 export const STOREFRONT_PROMOTION_STORAGE_KEY = "siggistore-storefront-promo-discount";
 
 let storefrontPromotionPromise = null;
@@ -54,6 +56,30 @@ function isGlobalDiscount(discount) {
   const scope = String(discount?.scope ?? discount?.applies_to ?? "").toLowerCase().trim();
   if (!scope) return true;
   return ["global", "all", "all products", "sitewide", "storewide"].includes(scope);
+}
+
+function isDiscountUsageAvailable(discount) {
+  const usageLimit = Number(discount?.usage_limit ?? 0);
+  if (!Number.isFinite(usageLimit) || usageLimit <= 0) return true;
+  return (Number(discount?.usage_count ?? 0) || 0) < usageLimit;
+}
+
+function normalizeAppliedDiscount(discount) {
+  if (!discount) return null;
+
+  return {
+    ...discount,
+    code: String(discount.code ?? "").trim().toUpperCase(),
+    status: String(discount.status ?? "draft").trim().toLowerCase(),
+    type: String(discount.type ?? "percent").trim().toLowerCase(),
+    value: Number(discount.value ?? discount.amount ?? 0) || 0,
+    amount: Number(discount.amount ?? discount.value ?? 0) || 0,
+    usage_limit:
+      discount.usage_limit == null || discount.usage_limit === ""
+        ? null
+        : Number(discount.usage_limit) || null,
+    usage_count: Number(discount.usage_count ?? 0) || 0,
+  };
 }
 
 function formatPromoValue(discount) {
@@ -256,6 +282,49 @@ export function parsePrice(value) {
 
 export function formatPrice(value) {
   return "$" + Number(value || 0).toFixed(2).replace(/\.00$/, "");
+}
+
+export function getAppliedDiscount() {
+  return normalizeAppliedDiscount(safeReadJson(APPLIED_DISCOUNT_KEY, null));
+}
+
+export function setAppliedDiscount(discount) {
+  const normalized = normalizeAppliedDiscount(discount);
+  if (!normalized) {
+    clearAppliedDiscount();
+    return null;
+  }
+
+  safeWriteJson(APPLIED_DISCOUNT_KEY, normalized);
+  dispatchStoreEvent(DISCOUNT_UPDATE_EVENT, { discount: normalized });
+  dispatchStoreEvent("storefront:discount-updated", { discount: normalized });
+  return normalized;
+}
+
+export function clearAppliedDiscount() {
+  safeRemoveStorageItem(APPLIED_DISCOUNT_KEY);
+  dispatchStoreEvent(DISCOUNT_UPDATE_EVENT, { discount: null });
+  dispatchStoreEvent("storefront:discount-updated", { discount: null });
+}
+
+export function getDiscountAmount(subtotal, discount = getAppliedDiscount()) {
+  const normalizedSubtotal = Math.max(0, Number(subtotal || 0));
+  const normalizedDiscount = normalizeAppliedDiscount(discount);
+
+  if (!normalizedSubtotal || !normalizedDiscount) return 0;
+  if (normalizedDiscount.status !== "active") return 0;
+  if (!isGlobalDiscount(normalizedDiscount)) return 0;
+  if (!isDiscountWithinSchedule(normalizedDiscount)) return 0;
+  if (!isDiscountUsageAvailable(normalizedDiscount)) return 0;
+
+  if (normalizedDiscount.type.includes("percent")) {
+    return Math.min(
+      normalizedSubtotal,
+      Number(((normalizedSubtotal * normalizedDiscount.value) / 100).toFixed(2)),
+    );
+  }
+
+  return Math.min(normalizedSubtotal, Math.max(0, normalizedDiscount.value));
 }
 
 export function normalizeCartItem(item, index = 0) {

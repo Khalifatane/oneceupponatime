@@ -2,10 +2,11 @@ import { Link } from 'react-router'
 import cartData from '@/data/cart.json'
 import { formatPrice } from '@/lib/store.js'
 import { useCart } from '@/hooks/useCart'
+import OrderSummaryCard from '@/components/OrderSummaryCard'
 
 export default function CartPage() {
   const { promoBanner, cartTitle, features, orderSummary, actions, youMayAlsoLike } = cartData
-  const { items, subtotal, formattedSubtotal, removeItem, updateQuantity } = useCart()
+  const { items, subtotal, removeItem, updateQuantity } = useCart()
 
   return (
     <main className="min-h-screen max-w-7xl mx-auto px-4 py-8">
@@ -121,56 +122,24 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="border rounded-lg p-6 sticky top-4">
-            <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                placeholder={orderSummary.promoCode.placeholder}
-                className="flex-1 border rounded px-3 py-2 text-sm"
-              />
-              <button className="px-4 py-2 border rounded text-sm hover:bg-gray-50">
-                {orderSummary.promoCode.buttonText}
-              </button>
-            </div>
-            <div className="space-y-3 text-sm mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
-                <span>{formattedSubtotal}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
-                <span>$0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
-                <span>$0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Promo</span>
-                <span>$0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Discount</span>
-                <span>$0</span>
-              </div>
-              <div className="flex justify-between font-semibold text-base pt-3 border-t">
-                <span>Total</span>
-                <span>{formattedSubtotal} {orderSummary.currency}</span>
-              </div>
-            </div>
-            <Link to="/checkout">
-              <button className="w-full py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition mb-3" disabled={subtotal <= 0}>
-                {actions.checkoutButton}
-              </button>
-            </Link>
-            {actions.paypalButton && (
-              <button className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .726-.629h6.507c2.952 0 4.943.725 5.993 2.15 1.02 1.39 1.26 3.37.726 5.89-.55 2.62-1.693 4.49-3.396 5.55-1.78 1.1-4.065 1.59-6.84 1.59H8.55a.77.77 0 0 0-.756.629l-.72 2.657z" /></svg>
-                Pay with PayPal
-              </button>
-            )}
-          </div>
+          <OrderSummaryCard
+            editCartLink="/cart"
+            currency={orderSummary.currency}
+            estimatedTaxLabel="$0"
+            promoPlaceholder={orderSummary.promoCode.placeholder}
+            promoButtonText={orderSummary.promoCode.buttonText}
+          />
+          <Link to="/checkout">
+            <button className="mt-3 w-full py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition mb-3" disabled={subtotal <= 0}>
+              {actions.checkoutButton}
+            </button>
+          </Link>
+          {actions.paypalButton && (
+            <button className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .726-.629h6.507c2.952 0 4.943.725 5.993 2.15 1.02 1.39 1.26 3.37.726 5.89-.55 2.62-1.693 4.49-3.396 5.55-1.78 1.1-4.065 1.59-6.84 1.59H8.55a.77.77 0 0 0-.756.629l-.72 2.657z" /></svg>
+              Pay with PayPal
+            </button>
+          )}
         </div>
       </div>
     </main>

@@ -6,3 +6,5 @@ store/node_modules/
 apps/*/.env.local
 apps/*/.sanity/
 npm-debug.log*
+apps/*/.turbo/
+dev-start*.log
