@@ -17,6 +17,71 @@ export const PRODUCT_RUNTIME_TABLE =
 export const PRODUCT_REVIEWS_TABLE = 'product_reviews';
 export const PRODUCT_REVIEW_REPLIES_TABLE = 'product_review_replies';
 
+const DISPLAY_VARIANTS_CHANNEL_PREFIX = '__display_variants:';
+const DISPLAY_META_CHANNEL_PREFIX = '__display_meta:';
+
+function encodeDisplayVariantsChannel(variants: any[] = []) {
+  try {
+    return `${DISPLAY_VARIANTS_CHANNEL_PREFIX}${encodeURIComponent(JSON.stringify(variants))}`;
+  } catch {
+    return `${DISPLAY_VARIANTS_CHANNEL_PREFIX}%5B%5D`;
+  }
+}
+
+function decodeDisplayVariantsChannel(channel: string) {
+  if (!String(channel || '').startsWith(DISPLAY_VARIANTS_CHANNEL_PREFIX)) return null;
+
+  try {
+    const value = String(channel).slice(DISPLAY_VARIANTS_CHANNEL_PREFIX.length);
+    const parsed = JSON.parse(decodeURIComponent(value));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function encodeDisplayMetaChannel(meta: any = {}) {
+  try {
+    return `${DISPLAY_META_CHANNEL_PREFIX}${encodeURIComponent(JSON.stringify(meta))}`;
+  } catch {
+    return `${DISPLAY_META_CHANNEL_PREFIX}%7B%7D`;
+  }
+}
+
+function decodeDisplayMetaChannel(channel: string) {
+  if (!String(channel || '').startsWith(DISPLAY_META_CHANNEL_PREFIX)) return null;
+
+  try {
+    const value = String(channel).slice(DISPLAY_META_CHANNEL_PREFIX.length);
+    const parsed = JSON.parse(decodeURIComponent(value));
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function splitRuntimeChannels(channels: any[] = []) {
+  const visibleChannels: string[] = [];
+  let displayVariants: any[] | null = null;
+  let displayMeta: any = null;
+
+  (Array.isArray(channels) ? channels : []).forEach((channel) => {
+    const meta = decodeDisplayMetaChannel(String(channel));
+    if (meta) {
+      displayMeta = meta;
+      return;
+    }
+    const decoded = decodeDisplayVariantsChannel(String(channel));
+    if (decoded) {
+      displayVariants = decoded;
+      return;
+    }
+    if (channel) visibleChannels.push(String(channel));
+  });
+
+  return { visibleChannels, displayVariants, displayMeta };
+}
+
 function applyRange(query: any, limit?: number, offset = 0) {
   if (typeof limit !== 'number') return query;
   const from = Math.max(0, offset);
@@ -66,6 +131,7 @@ function normalizeCustomer(row: any) {
 
 function normalizeProductRuntime(row: any) {
   if (!row) return row;
+  const { visibleChannels, displayVariants, displayMeta } = splitRuntimeChannels(row.channels);
   return {
     ...row,
     sanity_product_id:
@@ -79,7 +145,13 @@ function normalizeProductRuntime(row: any) {
       row.is_available === undefined || row.is_available === null
         ? true
         : Boolean(row.is_available),
-    channels: Array.isArray(row.channels) ? row.channels : [],
+    channels: visibleChannels,
+    display_variants: Array.isArray(row.display_variants)
+      ? row.display_variants
+      : Array.isArray(row.variants)
+        ? row.variants
+        : displayVariants || [],
+    display_category: row.display_category || displayMeta?.category || null,
   };
 }
 
@@ -269,6 +341,49 @@ export async function updateProductRuntimeAvailability(product: any, isAvailable
   return normalizeProductRuntime(data);
 }
 
+export async function updateProductRuntimeDisplay(product: any, display: any = {}, options: any = {}) {
+  const table = options.table || PRODUCT_RUNTIME_TABLE;
+  const variants = Array.isArray(display.variants) ? display.variants : [];
+  const tags = Array.isArray(display.tags) ? display.tags.filter(Boolean).map(String) : [];
+  const nextAvailability =
+    display.isAvailable === undefined || display.isAvailable === null
+      ? Boolean(product?.isAvailable)
+      : Boolean(display.isAvailable);
+  const identifiers = {
+    sanity_product_id: product?.runtime?.sanity_product_id || product?.id || null,
+    product_id: product?.runtime?.product_id || null,
+    slug: product?.slug || null,
+    sku: product?.sku || null,
+  };
+  const payload = {
+    ...identifiers,
+    stock: Math.max(0, Number(display.stock ?? product?.stock ?? 0) || 0),
+    status: nextAvailability ? 'publish' : 'unpublish',
+    is_available: nextAvailability,
+    channels: [
+      ...tags,
+      encodeDisplayMetaChannel({ category: display.category || null }),
+      encodeDisplayVariantsChannel(variants),
+    ],
+    updated_at: new Date().toISOString(),
+  };
+
+  if (product?.runtime?.id) {
+    const { data, error } = await supabase
+      .from(table)
+      .update(payload)
+      .eq('id', product.runtime.id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    return normalizeProductRuntime(data);
+  }
+
+  const { data, error } = await supabase.from(table).insert(payload).select('*').single();
+  if (error) throw error;
+  return normalizeProductRuntime(data);
+}
+
 export function mergeProductWithRuntime(product: any, runtime: any) {
   if (!runtime) return product;
   return {
@@ -290,6 +405,11 @@ export function mergeProductWithRuntime(product: any, runtime: any) {
       Array.isArray(runtime.channels) && runtime.channels.length
         ? runtime.channels
         : product.channels,
+    displayVariants:
+      Array.isArray(runtime.display_variants) && runtime.display_variants.length
+        ? runtime.display_variants
+        : product.displayVariants,
+    displayCategory: runtime.display_category || product.displayCategory,
     salesCount: Number(runtime.sales_count ?? product.salesCount ?? 0) || 0,
     featured: runtime.featured === undefined ? Boolean(product.featured) : Boolean(runtime.featured),
   };

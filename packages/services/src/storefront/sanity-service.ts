@@ -35,6 +35,10 @@ const PRODUCT_FRAGMENT = `
   },
   sku,
   stock,
+  status,
+  isAvailable,
+  variants,
+  channels,
   _createdAt,
   _updatedAt
 `;

@@ -17,6 +17,71 @@ export const ORDER_STATUSES = [
 export const PRODUCT_RUNTIME_TABLE =
   import.meta.env.VITE_SUPABASE_PRODUCTS_TABLE || 'products_runtime'
 
+const DISPLAY_VARIANTS_CHANNEL_PREFIX = '__display_variants:'
+const DISPLAY_META_CHANNEL_PREFIX = '__display_meta:'
+
+function encodeDisplayVariantsChannel(variants = []) {
+  try {
+    return `${DISPLAY_VARIANTS_CHANNEL_PREFIX}${encodeURIComponent(JSON.stringify(variants))}`
+  } catch {
+    return `${DISPLAY_VARIANTS_CHANNEL_PREFIX}%5B%5D`
+  }
+}
+
+function decodeDisplayVariantsChannel(channel) {
+  if (!String(channel || '').startsWith(DISPLAY_VARIANTS_CHANNEL_PREFIX)) return null
+
+  try {
+    const value = String(channel).slice(DISPLAY_VARIANTS_CHANNEL_PREFIX.length)
+    const parsed = JSON.parse(decodeURIComponent(value))
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function encodeDisplayMetaChannel(meta = {}) {
+  try {
+    return `${DISPLAY_META_CHANNEL_PREFIX}${encodeURIComponent(JSON.stringify(meta))}`
+  } catch {
+    return `${DISPLAY_META_CHANNEL_PREFIX}%7B%7D`
+  }
+}
+
+function decodeDisplayMetaChannel(channel) {
+  if (!String(channel || '').startsWith(DISPLAY_META_CHANNEL_PREFIX)) return null
+
+  try {
+    const value = String(channel).slice(DISPLAY_META_CHANNEL_PREFIX.length)
+    const parsed = JSON.parse(decodeURIComponent(value))
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function splitRuntimeChannels(channels = []) {
+  const visibleChannels = []
+  let displayVariants = null
+  let displayMeta = null
+
+  ;(Array.isArray(channels) ? channels : []).forEach((channel) => {
+    const meta = decodeDisplayMetaChannel(String(channel))
+    if (meta) {
+      displayMeta = meta
+      return
+    }
+    const decoded = decodeDisplayVariantsChannel(String(channel))
+    if (decoded) {
+      displayVariants = decoded
+      return
+    }
+    if (channel) visibleChannels.push(String(channel))
+  })
+
+  return { visibleChannels, displayVariants, displayMeta }
+}
+
 function applyRange(query, limit, offset = 0) {
   if (typeof limit !== 'number') return query
 
@@ -52,6 +117,7 @@ function normalizeCustomer(row) {
 
 function normalizeProductRuntime(row) {
   if (!row) return row
+  const { visibleChannels, displayVariants, displayMeta } = splitRuntimeChannels(row.channels)
 
   return {
     ...row,
@@ -75,7 +141,13 @@ function normalizeProductRuntime(row) {
       row.is_available === undefined || row.is_available === null
         ? true
         : Boolean(row.is_available),
-    channels: Array.isArray(row.channels) ? row.channels : [],
+    channels: visibleChannels,
+    display_variants: Array.isArray(row.display_variants)
+      ? row.display_variants
+      : Array.isArray(row.variants)
+        ? row.variants
+        : displayVariants || [],
+    display_category: row.display_category || displayMeta?.category || null,
   }
 }
 
@@ -392,6 +464,62 @@ export async function updateProductRuntimeAvailability(
   return normalizeProductRuntime(data)
 }
 
+export async function updateProductRuntimeDisplay(
+  product,
+  display = {},
+  options = {},
+) {
+  const table = options.table || PRODUCT_RUNTIME_TABLE
+  const variants = Array.isArray(display.variants) ? display.variants : []
+  const tags = Array.isArray(display.tags)
+    ? display.tags.filter(Boolean).map(String)
+    : []
+  const nextAvailability =
+    display.isAvailable === undefined || display.isAvailable === null
+      ? Boolean(product?.isAvailable)
+      : Boolean(display.isAvailable)
+  const identifiers = {
+    sanity_product_id: product?.runtime?.sanity_product_id || product?.id || null,
+    product_id: product?.runtime?.product_id || null,
+    slug: product?.slug || null,
+    sku: product?.sku || null,
+  }
+
+  const payload = {
+    ...identifiers,
+    stock: Math.max(0, Number(display.stock ?? product?.stock ?? 0) || 0),
+    status: nextAvailability ? 'publish' : 'unpublish',
+    is_available: nextAvailability,
+    channels: [
+      ...tags,
+      encodeDisplayMetaChannel({ category: display.category || null }),
+      encodeDisplayVariantsChannel(variants),
+    ],
+    updated_at: new Date().toISOString(),
+  }
+
+  if (product?.runtime?.id) {
+    const { data, error } = await supabase
+      .from(table)
+      .update(payload)
+      .eq('id', product.runtime.id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return normalizeProductRuntime(data)
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .insert(payload)
+    .select('*')
+    .single()
+
+  if (error) throw error
+  return normalizeProductRuntime(data)
+}
+
 export function mergeProductWithRuntime(product, runtime) {
   if (!runtime) return product
 
@@ -420,6 +548,11 @@ export function mergeProductWithRuntime(product, runtime) {
       Array.isArray(runtime.channels) && runtime.channels.length
         ? runtime.channels
         : product.channels,
+    displayVariants:
+      Array.isArray(runtime.display_variants) && runtime.display_variants.length
+        ? runtime.display_variants
+        : product.displayVariants,
+    displayCategory: runtime.display_category || product.displayCategory,
     salesCount: Number(runtime.sales_count ?? product.salesCount ?? 0) || 0,
     featured:
       runtime.featured === undefined
@@ -545,6 +678,7 @@ export default {
   getProductStockState,
   mergeProductWithRuntime,
   updateProductRuntimeAvailability,
+  updateProductRuntimeDisplay,
   fetchConversations,
   fetchMessages,
   sendMessage,

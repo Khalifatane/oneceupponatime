@@ -30,6 +30,7 @@ export {
   mergeProductWithRuntime,
   getProductStockState,
   updateProductRuntimeAvailability,
+  updateProductRuntimeDisplay,
   getOverviewMetrics,
   getOrderTotal,
   getOrderItemUnitPrice,
