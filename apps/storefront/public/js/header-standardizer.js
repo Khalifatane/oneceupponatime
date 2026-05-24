@@ -419,6 +419,108 @@
     return sortOrdersByNewest(Array.from(merged.values()));
   }
 
+  function normalizeOrderLookupValue(value) {
+    return String(value || "").trim().replace(/^#/, "").toLowerCase();
+  }
+
+  function getOrderLookupEmail(order) {
+    return String(
+      order && (
+        order.email ||
+        order.shipping_address && order.shipping_address.email ||
+        ""
+      ) || "",
+    ).trim().toLowerCase();
+  }
+
+  function orderMatchesLookup(order, lookupValue, email) {
+    var normalizedLookup = normalizeOrderLookupValue(lookupValue);
+    var normalizedEmail = String(email || "").trim().toLowerCase();
+    var orderNumbers = [
+      order && order.displayOrderNumber,
+      order && order.number,
+      order && order.order_number,
+      order && order.id,
+    ]
+      .map(normalizeOrderLookupValue)
+      .filter(Boolean);
+
+    if (!orderNumbers.includes(normalizedLookup)) return false;
+    if (!normalizedEmail) return true;
+    return getOrderLookupEmail(order) === normalizedEmail;
+  }
+
+  async function findSupabaseOrderByLookup(lookupValue, email) {
+    var supabase = await getSupabaseClient();
+    if (!supabase) return null;
+
+    var candidates = new Map();
+
+    async function collectCandidates(runQuery) {
+      try {
+        var result = await runQuery();
+        if (result && result.error) throw result.error;
+        (result && result.data || []).forEach(function (order) {
+          if (order && order.id) {
+            candidates.set(order.id, order);
+          }
+        });
+      } catch (error) {
+        console.warn("Supabase order lookup query failed.", error);
+      }
+    }
+
+    if (/^[0-9a-f-]{20,}$/i.test(lookupValue)) {
+      await collectCandidates(function () {
+        return supabase
+          .from("orders")
+          .select("*")
+          .eq("id", lookupValue)
+          .limit(1);
+      });
+    }
+
+    if (email) {
+      await collectCandidates(function () {
+        return supabase
+          .from("orders")
+          .select("*")
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(50);
+      });
+
+      await collectCandidates(function () {
+        return supabase
+          .from("orders")
+          .select("*")
+          .contains("shipping_address", { email: email })
+          .order("created_at", { ascending: false })
+          .limit(50);
+      });
+    }
+
+    var matchedOrder = Array.from(candidates.values()).find(function (entry) {
+      return orderMatchesLookup(entry, lookupValue, email);
+    });
+
+    if (!matchedOrder) return null;
+
+    return {
+      ...matchedOrder,
+      displayOrderNumber:
+        matchedOrder.displayOrderNumber ||
+        matchedOrder.number ||
+        matchedOrder.order_number ||
+        matchedOrder.id,
+      email:
+        matchedOrder.email ||
+        matchedOrder.shipping_address && matchedOrder.shipping_address.email ||
+        email ||
+        "",
+    };
+  }
+
   function buildDisplayOrderNumber() {
     return "ORD-" + Date.now().toString().slice(-8);
   }
@@ -1923,9 +2025,37 @@
     return method ? String(method).trim() : "Par Chario";
   }
 
-  function getPaymentStatusLabel(method) {
-    if (method === "PayPal") return "A la livraison";
-    if (method === "Klarna") return "A la boutique";
+  function getPaymentStatusLabel(source) {
+    var explicitStatus =
+      source && (
+        source.payment_status ||
+        source.paymentStatus ||
+        source.payment && source.payment.status ||
+        ""
+      );
+
+    if (explicitStatus) {
+      return String(explicitStatus)
+        .trim()
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .split(" ")
+        .filter(Boolean)
+        .map(function (part) {
+          return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+        })
+        .join(" ");
+    }
+
+    var method = source && (
+      source.payment_method ||
+      source.paymentMethod ||
+      source.payment && source.payment.method ||
+      source
+    );
+
+    if (method === "PayPal") return "Cash on delivery";
+    if (method === "Klarna") return "Pay in store";
     return "Paid";
   }
 
@@ -2097,7 +2227,7 @@
       return /\bPaid\b/i.test(node.textContent || "") && node.querySelector("svg");
     });
     if (statusBadge) {
-      statusBadge.childNodes[statusBadge.childNodes.length - 1].textContent = " " + getPaymentStatusLabel(order.payment_method);
+      statusBadge.childNodes[statusBadge.childNodes.length - 1].textContent = " " + getPaymentStatusLabel(order);
     }
 
     const orderSummaryHeading = Array.from(document.querySelectorAll("h2, h3, h4, h5")).find(function (node) {
@@ -2258,6 +2388,13 @@
     if (normalizedStatus === "delivered") return "Delivered";
     if (normalizedStatus === "shipped") return "Shipped";
     return "Pending";
+  }
+
+  function getLatestOrderStatusSummary(order) {
+    const normalizedStatus = normalizeLatestOrderTrackerStatus(order);
+    if (normalizedStatus === "delivered") return "Order delivered";
+    if (normalizedStatus === "shipped") return "Order shipped";
+    return "Order in progress";
   }
 
   function normalizeLatestOrderTrackerStatus(order) {
@@ -2427,8 +2564,10 @@
     });
   }
 
-  function renderLatestOrderItems(root, order) {
-    if (!root || !order || !Array.isArray(order.items)) return;
+  function renderOrderItemsList(root, order) {
+    if (!root) return;
+    root.innerHTML = "";
+    if (!order || !Array.isArray(order.items) || !order.items.length) return;
 
     root.innerHTML = order.items.map(function (item) {
       const normalized = normalizeCartItem(item, 0);
@@ -2468,6 +2607,10 @@
         "</div>",
       ].join("");
     }).join("");
+  }
+
+  function renderLatestOrderItems(root, order) {
+    renderOrderItemsList(root, order);
   }
 
   function renderWriteReviewProduct() {
@@ -2695,20 +2838,26 @@
 
     const root = document.querySelector("[data-latest-order-card='true']");
     if (!root) return;
+    root.hidden = true;
 
     const supabaseOrder = await resolveLatestSupabaseOrder();
     const order = supabaseOrder || readJsonStorage(latestOrderKey, null);
-    if (!order) return;
+    if (!order) {
+      renderLatestOrderItems(root.querySelector("[data-latest-order-items='true']"), null);
+      return;
+    }
+    root.hidden = false;
 
     const pricing = buildOrderSummaryPricing(order);
-    const statusLabel = getLatestOrderStatusLabel(order);
+    const statusSummary = getLatestOrderStatusSummary(order);
     const addressLabel = getLatestOrderAddressLabel(order);
     const orderNumber = order.displayOrderNumber || order.id || "";
     const orderDate = formatOrderDateTime(order.created_at);
     const deliveryLabel = getEstimatedDeliveryLabel(order);
+    const normalizedStatus = normalizeLatestOrderTrackerStatus(order);
 
     root.querySelectorAll("[data-latest-order-status='true']").forEach(function (node) {
-      node.innerHTML = '<span class="v3q4v y6rh0 n6fqq inline-block ij5jy nj29a"></span>' + statusLabel;
+      node.innerHTML = '<span class="v3q4v y6rh0 n6fqq inline-block ij5jy nj29a"></span><span data-latest-order-status-copy="true">' + statusSummary + "</span>";
     });
     root.querySelectorAll("[data-latest-order-number='true']").forEach(function (node) {
       node.textContent = orderNumber;
@@ -2721,6 +2870,9 @@
     });
     root.querySelectorAll("[data-latest-order-delivery='true']").forEach(function (node) {
       node.textContent = deliveryLabel;
+    });
+    root.querySelectorAll("[data-latest-order-delivery-prefix='true']").forEach(function (node) {
+      node.textContent = normalizedStatus === "delivered" ? "Delivered" : "Estimated delivery";
     });
     root.querySelectorAll("[data-latest-order-address='true']").forEach(function (node) {
       node.textContent = addressLabel || "";
@@ -2860,27 +3012,11 @@
       }
 
       let order = getStoredOrders().find(function (entry) {
-        const displayOrderNumber = String(entry.displayOrderNumber || entry.id || "").toLowerCase();
-        const orderEmail = String(entry.email || entry.shipping_address && entry.shipping_address.email || "").toLowerCase();
-        return displayOrderNumber === lookupValue.toLowerCase() && orderEmail === email;
+        return orderMatchesLookup(entry, lookupValue, email);
       });
 
-      if (!order && /^[0-9a-f-]{20,}$/i.test(lookupValue)) {
-        const services = await getServices();
-        if (services && services.supabaseOrderService) {
-          try {
-            const response = await services.supabaseOrderService.getOrder(lookupValue);
-            if (response && response.success && response.data) {
-              order = {
-                ...response.data,
-                displayOrderNumber: response.data.id,
-                email: email,
-              };
-            }
-          } catch (error) {
-            console.warn("Supabase order lookup failed.", error);
-          }
-        }
+      if (!order) {
+        order = await findSupabaseOrderByLookup(lookupValue, email);
       }
 
       if (!order) {
@@ -2888,6 +3024,7 @@
         return;
       }
 
+      saveStoredOrders(mergeOrdersById(getStoredOrders(), [order]));
       writeJsonStorage(lookupOrderKey, order);
       writeJsonStorage(latestOrderKey, order);
       showMessage(container, "data-order-lookup-message", "Order found. Redirecting...", "success");
@@ -2973,7 +3110,7 @@
       node.textContent = getPaymentMethodDisplayLabel(source.payment_method);
     });
     document.querySelectorAll("[data-order-details-payment-status='true']").forEach(function (node) {
-      node.textContent = getPaymentStatusLabel(source.payment_method);
+      node.textContent = getPaymentStatusLabel(source);
     });
     document.querySelectorAll("[data-order-details-contact-email='true']").forEach(function (node) {
       node.textContent = source.email || shippingAddress.email || "";
@@ -2995,6 +3132,7 @@
     });
     applyOrderTracker(document, source);
     renderOrderSummaryValues(buildOrderSummaryPricing(source));
+    renderOrderItemsList(document.querySelector("[data-order-details-items='true']"), source);
   }
 
   function bindOrderDetailsAddressModal() {
