@@ -12,6 +12,8 @@
   const favoritesKey = "appFavorites";
   const newsletterKey = "appNewsletterSubscribers";
   const checkoutDraftKey = "appCheckoutDraft";
+  const lastCheckoutDetailsKey = "appLastCheckoutDetails";
+  const reviewSnapshotKey = "appReviewOrderSnapshot";
   const ordersKey = "appOrders";
   const latestOrderKey = "appLatestOrder";
   const lookupOrderKey = "appLookupOrder";
@@ -1537,6 +1539,7 @@
   function collectCheckoutDraft() {
     const countrySelect = document.querySelector('[data-hs-select] select');
     const shippingMethod = document.querySelector('input[name="hs-pro-esdo"]:checked');
+    const selectedShippingMethodId = shippingMethod ? shippingMethod.id : "";
     const email = document.getElementById("hs-pro-shchfem");
     const fullName = document.getElementById("hs-pro-shchfn");
     const address1 = document.getElementById("hs-pro-shchfad1");
@@ -1552,7 +1555,7 @@
     const subtotal = cartItems.reduce(function (sum, item) {
       return sum + Number(item.price || 0) * Number(item.quantity || 0);
     }, 0);
-    const shippingAmount = getShippingAmount(shippingMethod ? shippingMethod.id : "hs-pro-esdo1");
+    const shippingAmount = getShippingAmount(selectedShippingMethodId || "hs-pro-esdo1");
     const estimatedTax = 0;
     const saleDiscount = getSaleDiscount(cartItems);
     const promoCodeValue = promoCode ? promoCode.value.trim() : "";
@@ -1571,7 +1574,7 @@
       phone: phone ? phone.value.trim() : "",
       marketingOptIn: Boolean(marketingOptIn && marketingOptIn.checked),
       saveAddress: Boolean(saveAddress && saveAddress.checked),
-      shippingMethod: shippingMethod ? shippingMethod.id : "hs-pro-esdo1",
+      shippingMethod: selectedShippingMethodId,
       promoCode: promoCodeValue,
       shippingAmount: shippingAmount,
       estimatedTax: estimatedTax,
@@ -1615,7 +1618,8 @@
 
       if (typeof value === "string") {
         if (checkoutFieldKeys.has(key)) {
-          merged[key] = value.trim();
+          const trimmedValue = value.trim();
+          if (trimmedValue) merged[key] = trimmedValue;
           return;
         }
         if (value.trim()) merged[key] = value;
@@ -1648,6 +1652,139 @@
     if (methodId === "hs-pro-esdo2") return 9;
     if (methodId === "hs-pro-esdo3") return 10;
     return 0;
+  }
+
+  function buildShippingAddressFromCheckoutDraft(draft) {
+    if (!draft) return null;
+
+    const fullName = String(draft.fullName || "").trim();
+
+    return {
+      first_name: fullName.split(" ")[0] || fullName || "",
+      last_name: fullName.split(" ").slice(1).join(" "),
+      email: draft.email || "",
+      phone: draft.phone || "",
+      address_line_1: draft.address1 || draft.city || "",
+      address_line_2: draft.address2 || "",
+      city: draft.city || "",
+      state: draft.state || "",
+      postal_code: draft.zipCode || "",
+      country: draft.country || "",
+    };
+  }
+
+  function buildReviewSnapshot(draft, paymentMethod) {
+    const nextDraft = draft || {};
+    const pricing = buildOrderSummaryPricing(nextDraft);
+    const shippingAddress = buildShippingAddressFromCheckoutDraft(nextDraft);
+
+    return {
+      email: nextDraft.email || "",
+      fullName: nextDraft.fullName || "",
+      phone: nextDraft.phone || "",
+      country: nextDraft.country || "",
+      address1: nextDraft.address1 || "",
+      address2: nextDraft.address2 || "",
+      city: nextDraft.city || "",
+      state: nextDraft.state || "",
+      zipCode: nextDraft.zipCode || "",
+      shippingMethod: nextDraft.shippingMethod || "hs-pro-esdo1",
+      shippingMethodLabel: getShippingMethodSummary(nextDraft.shippingMethod),
+      paymentMethod: paymentMethod || nextDraft.paymentMethod || "Card",
+      promoCode: nextDraft.promoCode || "",
+      currency: nextDraft.currency || "USD",
+      items: Array.isArray(nextDraft.items)
+        ? nextDraft.items.map(function (item) {
+            return {
+              product_id: item.product_id || item.id,
+              quantity: Number(item.quantity || 1),
+              price: Number(item.price || 0),
+              title: item.title,
+              image: item.image || "",
+              href: item.href || "./Product Detail.html",
+              color: item.color || "",
+              size: item.size || "",
+              sku: item.sku || "",
+            };
+          })
+        : [],
+      subtotal: pricing.subtotal,
+      shippingAmount: pricing.shippingAmount,
+      estimatedTax: pricing.estimatedTax,
+      saleDiscount: pricing.saleDiscount,
+      promoDiscount: pricing.promoDiscount,
+      total: pricing.total,
+      shippingAddress: shippingAddress,
+      billingAddress: shippingAddress ? { ...shippingAddress } : null,
+      confirmedAt: new Date().toISOString(),
+    };
+  }
+
+  function persistReviewSnapshot(snapshot) {
+    if (!snapshot) return;
+    writeJsonStorage(reviewSnapshotKey, snapshot);
+  }
+
+  function getPersistedReviewSnapshot() {
+    return readJsonStorage(reviewSnapshotKey, null);
+  }
+
+  function buildOrderPayloadFromReviewSnapshot(snapshot, user) {
+    return {
+      user_id: user && user.id ? user.id : null,
+      status: "pending",
+      payment_method: snapshot.paymentMethod || "Card",
+      subtotal: snapshot.subtotal,
+      shipping_amount: snapshot.shippingAmount,
+      tax_amount: snapshot.estimatedTax,
+      sale_discount: snapshot.saleDiscount,
+      promo_code: snapshot.promoCode,
+      promo_discount: snapshot.promoDiscount,
+      total: snapshot.total,
+      total_amount: snapshot.total,
+      currency: snapshot.currency || "USD",
+      items: Array.isArray(snapshot.items) ? snapshot.items : [],
+      shipping_address: snapshot.shippingAddress,
+      billing_address: snapshot.billingAddress,
+    };
+  }
+
+  function hydrateOrderFromSnapshot(order, snapshot) {
+    if (!order) return order;
+
+    const nextSnapshot =
+      snapshot && (!snapshot.linkedOrderId || !order.id || snapshot.linkedOrderId === order.id)
+        ? snapshot
+        : null;
+    const shippingAddress =
+      order.shipping_address ||
+      (nextSnapshot ? nextSnapshot.shippingAddress : null) ||
+      null;
+    const billingAddress =
+      order.billing_address ||
+      (nextSnapshot ? nextSnapshot.billingAddress : null) ||
+      shippingAddress;
+
+    return {
+      ...order,
+      payment_method:
+        order.payment_method ||
+        (nextSnapshot ? nextSnapshot.paymentMethod : null) ||
+        "Card",
+      shipping_address: shippingAddress,
+      billing_address: billingAddress,
+      email:
+        order.email ||
+        shippingAddress && shippingAddress.email ||
+        nextSnapshot && nextSnapshot.email ||
+        "",
+      items:
+        Array.isArray(order.items) && order.items.length
+          ? order.items
+          : nextSnapshot && Array.isArray(nextSnapshot.items)
+            ? nextSnapshot.items
+            : [],
+    };
   }
 
   function getSaleDiscount(items) {
@@ -1752,16 +1889,21 @@
     return paymentMethod ? paymentMethod.value : "Card";
   }
 
+  function getPaymentMethodLabel(method) {
+    if (method === "PayPal") return "A la livraison";
+    if (method === "Klarna") return "A la boutique";
+    if (method === "Card") return "Par Chario";
+    return method ? String(method).trim() : "Par Chario";
+  }
+
   function getPaymentStatusLabel(method) {
-    if (method === "PayPal") return "Pay on delivery";
-    if (method === "Klarna") return "Pay in store";
+    if (method === "PayPal") return "A la livraison";
+    if (method === "Klarna") return "A la boutique";
     return "Paid";
   }
 
   function getPaymentMethodDisplayLabel(method) {
-    if (method === "PayPal") return "PayPal";
-    if (method === "Klarna") return "Klarna";
-    return "Card";
+    return getPaymentMethodLabel(method);
   }
 
   function renderReviewSummaryFromDraft(draft) {
@@ -1872,6 +2014,8 @@
       const baseDraft = readJsonStorage(checkoutDraftKey, {}) || {};
       const nextDraft = mergeCheckoutDraft(baseDraft, collectCheckoutDraft());
       writeJsonStorage(checkoutDraftKey, nextDraft);
+      persistLastCheckoutDetails(nextDraft);
+      persistReviewSnapshot(buildReviewSnapshot(nextDraft, getSelectedReviewPaymentMethod()));
       renderReviewSummaryFromDraft(nextDraft);
       renderCheckoutSummaryFromDraft(nextDraft);
     });
@@ -1900,6 +2044,8 @@
       }
 
       writeJsonStorage(checkoutDraftKey, draft);
+      persistLastCheckoutDetails(draft);
+      persistReviewSnapshot(buildReviewSnapshot(draft));
       showMessage(footer, "data-checkout-message", "Checkout details saved.", "success");
       window.location.href = "./review-pay.html";
     });
@@ -1982,15 +2128,39 @@
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "";
 
-    return date.toLocaleDateString("en-US", options || {
-      month: "2-digit",
+    return date.toLocaleDateString("en-GB", options || {
       day: "2-digit",
+      month: "2-digit",
       year: "numeric",
     });
   }
 
+  function formatOrderTime(value) {
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }
+
+  function formatOrderDateTime(value) {
+    const dateLabel = formatOrderDate(value);
+    const timeLabel = formatOrderTime(value);
+
+    if (!dateLabel) return "";
+    if (!timeLabel) return dateLabel;
+    return dateLabel + " " + timeLabel;
+  }
+
   function formatOrderAddress(address) {
     if (!address) return "";
+
+    const seen = new Set();
 
     return [
       address.address_line_1,
@@ -1999,7 +2169,47 @@
       address.state,
       address.postal_code,
       address.country,
-    ].filter(Boolean).join(", ");
+    ]
+      .map(function (value) {
+        return String(value || "").trim();
+      })
+      .filter(Boolean)
+      .filter(function (value) {
+        const normalized = value.toLowerCase();
+        if (seen.has(normalized)) return false;
+        seen.add(normalized);
+        return true;
+      })
+      .join(", ");
+  }
+
+  function persistLastCheckoutDetails(draft) {
+    if (!draft) return;
+
+    writeJsonStorage(lastCheckoutDetailsKey, {
+      email: draft.email || "",
+      fullName: draft.fullName || "",
+      address1: draft.address1 || "",
+      address2: draft.address2 || "",
+      city: draft.city || "",
+      state: draft.state || "",
+      zipCode: draft.zipCode || "",
+      country: draft.country || "",
+      phone: draft.phone || "",
+      shippingMethod: draft.shippingMethod || "",
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  function getLatestOrderAddressLabel(order) {
+    const orderAddress = formatOrderAddress(order && order.shipping_address);
+    if (orderAddress) return orderAddress;
+
+    const checkoutDraft =
+      getPersistedReviewSnapshot() ||
+      readJsonStorage(lastCheckoutDetailsKey, null) ||
+      readJsonStorage(checkoutDraftKey, null);
+    return formatOrderAddress(buildShippingAddressFromCheckoutDraft(checkoutDraft));
   }
 
   function getEstimatedDeliveryLabel(order) {
@@ -2013,12 +2223,7 @@
     const deliveryDate = new Date(createdAt);
     deliveryDate.setDate(deliveryDate.getDate() + transitDays);
 
-    return deliveryDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return formatOrderDate(deliveryDate);
   }
 
   function getLatestOrderStatusLabel(order) {
@@ -2259,18 +2464,56 @@
   }
 
 
-  function renderLatestOrderCard() {
+  async function resolveLatestSupabaseOrder() {
+    const services = await getServices();
+    if (!services || !services.supabaseOrderService) return null;
+
+    const user = await getCurrentUser();
+    if (!user || !user.id) return null;
+
+    try {
+      const response = await services.supabaseOrderService.getOrders(user.id);
+      const orders = response && response.success && Array.isArray(response.data)
+        ? response.data
+        : [];
+      if (!orders.length) return null;
+
+      const normalizedOrders = orders.map(function (order) {
+        return hydrateOrderFromSnapshot({
+          ...order,
+          displayOrderNumber: order.displayOrderNumber || order.number || order.id,
+          email:
+            order.email ||
+            order.shipping_address && order.shipping_address.email ||
+            localStorage.getItem(authEmailKey) ||
+            "",
+        }, getPersistedReviewSnapshot());
+      });
+
+      saveStoredOrders(normalizedOrders);
+      writeJsonStorage(latestOrderKey, normalizedOrders[0]);
+      return normalizedOrders[0];
+    } catch (error) {
+      console.warn("Unable to load latest Supabase order for My Orders page.", error);
+      return null;
+    }
+  }
+
+  async function renderLatestOrderCard() {
     if (!isPage("My Orders.html")) return;
 
     const root = document.querySelector("[data-latest-order-card='true']");
-    const order = readJsonStorage(latestOrderKey, null);
-    if (!root || !order) return;
+    if (!root) return;
+
+    const supabaseOrder = await resolveLatestSupabaseOrder();
+    const order = supabaseOrder || readJsonStorage(latestOrderKey, null);
+    if (!order) return;
 
     const pricing = buildOrderSummaryPricing(order);
     const statusLabel = getLatestOrderStatusLabel(order);
-    const addressLabel = formatOrderAddress(order.shipping_address);
+    const addressLabel = getLatestOrderAddressLabel(order);
     const orderNumber = order.displayOrderNumber || order.id || "";
-    const orderDate = formatOrderDate(order.created_at);
+    const orderDate = formatOrderDateTime(order.created_at);
     const deliveryLabel = getEstimatedDeliveryLabel(order);
 
     root.querySelectorAll("[data-latest-order-status='true']").forEach(function (node) {
@@ -2289,10 +2532,16 @@
       node.textContent = deliveryLabel;
     });
     root.querySelectorAll("[data-latest-order-address='true']").forEach(function (node) {
-      if (addressLabel) node.textContent = addressLabel;
+      node.textContent = addressLabel || "";
     });
     root.querySelectorAll("[data-latest-order-current-status='true']").forEach(function (node) {
       node.textContent = statusLabel;
+    });
+
+    root.querySelectorAll('a[href="./Order Details.html"]').forEach(function (link) {
+      if (order && order.id) {
+        link.setAttribute("href", "./Order Details.html?order=" + encodeURIComponent(order.id));
+      }
     });
 
     renderLatestOrderItems(root.querySelector("[data-latest-order-items='true']"), order);
@@ -2320,6 +2569,10 @@
     const placeReviewOrder = async function (footer) {
       const baseDraft = readJsonStorage(checkoutDraftKey, {}) || {};
       const currentDraft = mergeCheckoutDraft(baseDraft, collectCheckoutDraft());
+      persistLastCheckoutDetails(currentDraft);
+      const paymentMethod = getSelectedReviewPaymentMethod();
+      const reviewSnapshot = buildReviewSnapshot(currentDraft, paymentMethod);
+      persistReviewSnapshot(reviewSnapshot);
       const validationError = validateCheckoutDraft(currentDraft);
 
       if (validationError) {
@@ -2328,67 +2581,19 @@
       }
 
       const user = await getCurrentUser();
-      const paymentMethod = getSelectedReviewPaymentMethod();
-      const orderPayload = {
-        user_id: user && user.id ? user.id : "guest-" + Date.now(),
-        status: "pending",
-        payment_method: paymentMethod,
-        subtotal: currentDraft.subtotal,
-        shipping_amount: currentDraft.shippingAmount,
-        tax_amount: currentDraft.estimatedTax,
-        sale_discount: currentDraft.saleDiscount,
-        promo_code: currentDraft.promoCode,
-        promo_discount: currentDraft.promoDiscount,
-        total: currentDraft.total,
-        currency: currentDraft.currency || "USD",
-        items: currentDraft.items.map(function (item) {
-          return {
-            product_id: item.product_id || item.id,
-            quantity: Number(item.quantity || 1),
-            price: Number(item.price || 0),
-            title: item.title,
-            image: item.image || "",
-            href: item.href || "./Product Detail.html",
-            color: item.color || "",
-            size: item.size || "",
-          };
-        }),
-        shipping_address: {
-          first_name: currentDraft.fullName.split(" ")[0] || currentDraft.fullName,
-          last_name: currentDraft.fullName.split(" ").slice(1).join(" "),
-          email: currentDraft.email,
-          phone: currentDraft.phone,
-          address_line_1: currentDraft.address1,
-          address_line_2: currentDraft.address2,
-          city: currentDraft.city,
-          postal_code: currentDraft.zipCode,
-          country: currentDraft.country,
-        },
-        billing_address: {
-          first_name: currentDraft.fullName.split(" ")[0] || currentDraft.fullName,
-          last_name: currentDraft.fullName.split(" ").slice(1).join(" "),
-          email: currentDraft.email,
-          phone: currentDraft.phone,
-          address_line_1: currentDraft.address1,
-          address_line_2: currentDraft.address2,
-          city: currentDraft.city,
-          postal_code: currentDraft.zipCode,
-          country: currentDraft.country,
-        },
-      };
+      const orderPayload = buildOrderPayloadFromReviewSnapshot(reviewSnapshot, user);
 
       let savedOrder = null;
       const services = await getServices();
 
-      if (services && services.supabaseOrderService && user && user.id) {
+      if (services && services.supabaseOrderService) {
         try {
           const response = await services.supabaseOrderService.createOrder(orderPayload);
           if (response && response.success && response.data) {
-            savedOrder = {
+            savedOrder = hydrateOrderFromSnapshot({
               ...response.data,
               displayOrderNumber: response.data.id,
-              email: currentDraft.email,
-            };
+            }, reviewSnapshot);
           }
         } catch (error) {
           console.warn("Supabase order creation failed, falling back to local storage.", error);
@@ -2396,15 +2601,20 @@
       }
 
       if (!savedOrder) {
-        savedOrder = {
+        savedOrder = hydrateOrderFromSnapshot({
           ...orderPayload,
           id: "local-order-" + Date.now(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           displayOrderNumber: buildDisplayOrderNumber(),
-          email: currentDraft.email,
-        };
+        }, reviewSnapshot);
       }
+
+      persistReviewSnapshot({
+        ...reviewSnapshot,
+        linkedOrderId: savedOrder.id,
+        displayOrderNumber: savedOrder.displayOrderNumber || savedOrder.id,
+      });
 
       const orders = getStoredOrders();
       orders.unshift(savedOrder);
@@ -2506,30 +2716,61 @@
     renderConfirmationFromOrder(order);
   }
 
-  function renderOrderDetailsPage() {
+  async function renderOrderDetailsPage() {
     if (!isPage("Order Details.html")) return;
 
-    const order = readJsonStorage(lookupOrderKey, null) || readJsonStorage(latestOrderKey, null);
-    const checkoutDraft = readJsonStorage(checkoutDraftKey, null);
+    let order = readJsonStorage(lookupOrderKey, null) || readJsonStorage(latestOrderKey, null);
+    const params = new URLSearchParams(window.location.search);
+    const requestedOrderId = params.get("order");
+    if ((!order || (requestedOrderId && order.id !== requestedOrderId)) && requestedOrderId) {
+      const services = await getServices();
+      if (services && services.supabaseOrderService && typeof services.supabaseOrderService.getOrder === "function") {
+        try {
+          const response = await services.supabaseOrderService.getOrder(requestedOrderId);
+          if (response && response.success && response.data) {
+            order = hydrateOrderFromSnapshot({
+              ...response.data,
+              displayOrderNumber:
+                response.data.displayOrderNumber ||
+                response.data.number ||
+                response.data.id,
+              email:
+                response.data.email ||
+                response.data.shipping_address && response.data.shipping_address.email ||
+                localStorage.getItem(authEmailKey) ||
+                "",
+            }, getPersistedReviewSnapshot());
+            writeJsonStorage(lookupOrderKey, order);
+            writeJsonStorage(latestOrderKey, order);
+          }
+        } catch (error) {
+          console.warn("Unable to load storefront order details from Supabase.", error);
+        }
+      }
+    }
+
+    const checkoutDraft =
+      getPersistedReviewSnapshot() ||
+      readJsonStorage(lastCheckoutDetailsKey, null) ||
+      readJsonStorage(checkoutDraftKey, null);
     const fallbackSource = checkoutDraft
       ? {
           ...checkoutDraft,
           email: checkoutDraft.email || "",
-          payment_method: "Card",
-          shipping_address: {
-            first_name: (checkoutDraft.fullName || "").split(" ")[0] || checkoutDraft.fullName || "",
-            last_name: (checkoutDraft.fullName || "").split(" ").slice(1).join(" "),
-            email: checkoutDraft.email || "",
-            phone: checkoutDraft.phone || "",
-            address_line_1: checkoutDraft.address1 || "",
-            address_line_2: checkoutDraft.address2 || "",
-            city: checkoutDraft.city || "",
-            postal_code: checkoutDraft.zipCode || "",
-            country: checkoutDraft.country || "",
-          },
+          payment_method: checkoutDraft.paymentMethod || "Card",
+          items: checkoutDraft.items || [],
+          shipping_amount: checkoutDraft.shippingAmount,
+          tax_amount: checkoutDraft.estimatedTax,
+          sale_discount: checkoutDraft.saleDiscount,
+          promo_discount: checkoutDraft.promoDiscount,
+          promo_code: checkoutDraft.promoCode,
+          total: checkoutDraft.total,
+          subtotal: checkoutDraft.subtotal,
+          shipping_address: checkoutDraft.shippingAddress || buildShippingAddressFromCheckoutDraft(checkoutDraft),
+          billing_address: checkoutDraft.billingAddress || checkoutDraft.shippingAddress || buildShippingAddressFromCheckoutDraft(checkoutDraft),
         }
       : null;
-    const source = order || fallbackSource;
+    const source = hydrateOrderFromSnapshot(order || fallbackSource, getPersistedReviewSnapshot());
     if (!source) return;
     const shippingAddress = source.shipping_address || {};
     const shippingName = [
@@ -2562,6 +2803,9 @@
     });
     document.querySelectorAll("[data-order-details-shipping-phone='true']").forEach(function (node) {
       node.textContent = shippingAddress.phone || "";
+    });
+    document.querySelectorAll("[data-order-details-delivery='true']").forEach(function (node) {
+      node.textContent = getEstimatedDeliveryLabel(source);
     });
     renderOrderSummaryValues(buildOrderSummaryPricing(source));
   }
@@ -2789,7 +3033,7 @@
       });
     });
 
-    const logoLink = document.querySelector('header a[aria-label="Preline"]');
+    const logoLink = document.querySelector('header .jdzig a.flex-none');
     if (logoLink) {
       logoLink.setAttribute("href", isAdminApp ? "/admin/" : "/");
     }

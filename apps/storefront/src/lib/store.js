@@ -96,9 +96,10 @@ function formatPromoEndDate(discount) {
   const date = new Date(discount.ends_at);
   if (Number.isNaN(date.getTime())) return "";
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   }).format(date);
 }
 

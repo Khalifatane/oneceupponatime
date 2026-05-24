@@ -340,6 +340,17 @@ export async function updateOrderStatus(orderId, status) {
   return normalizeOrder(data)
 }
 
+export async function deleteOrder(orderId) {
+  const { error } = await supabase
+    .from('orders')
+    .delete()
+    .eq('id', orderId)
+
+  if (error) throw error
+
+  return { id: orderId }
+}
+
 export async function fetchDiscounts(options = {}) {
   const { limit, offset, status, query: search } = options
 
@@ -704,6 +715,7 @@ export default {
   fetchProfilesByIds,
   fetchOrderItemsByOrderIds,
   updateOrderStatus,
+  deleteOrder,
   fetchDiscounts,
   fetchProductRuntime,
   fetchProductRuntimeByIds,

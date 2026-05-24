@@ -1,4 +1,8 @@
-import { createDiscount, fetchDiscounts } from "@siggistore/services/admin";
+import {
+  createDiscount,
+  deleteDiscount,
+  fetchDiscounts,
+} from "@siggistore/services/admin";
 import { subscribeToDiscounts } from "@siggistore/services/admin/realtime.js";
 import { createTableUrlState } from "@siggistore/services/admin/table-state.js";
 
@@ -59,10 +63,9 @@ function formatDiscountValue(discount) {
 }
 
 function formatDateLabel(date) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
+  return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
   }).format(date);
 }
@@ -371,6 +374,7 @@ function buildDiscountRow(discount) {
   const codeId = `discount-code-${String(discount.id ?? discount.code ?? Math.random()).replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const scope = discount.scope || discount.applies_to || "All products";
   const usageCount = discount.usage_count ?? discount.uses ?? 0;
+  const discountId = String(discount.id ?? discount.code ?? "");
 
   return `
     <tr>
@@ -418,6 +422,9 @@ function buildDiscountRow(discount) {
             <div class="i0yn8">
               <button type="button" class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu">
                 Edit
+              </button>
+              <button type="button" class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu" data-discount-delete="${escapeHtml(discountId)}">
+                Delete
               </button>
             </div>
           </div>
@@ -529,6 +536,31 @@ async function initDiscountsPage() {
     const state = tableState.getState();
     tableState.setPage((state.page || 1) + 1);
     render();
+  });
+
+  tableBody.addEventListener("click", async (event) => {
+    const deleteButton = event.target.closest("[data-discount-delete]");
+    if (!deleteButton) return;
+
+    const discountId = deleteButton.getAttribute("data-discount-delete");
+    if (!discountId) return;
+
+    const shouldDelete = window.confirm(`Delete discount ${discountId}?`);
+    if (!shouldDelete) return;
+
+    const originalText = deleteButton.textContent;
+    deleteButton.textContent = "Deleting...";
+    deleteButton.disabled = true;
+
+    try {
+      await deleteDiscount(discountId);
+      await render();
+    } catch (error) {
+      console.error("Failed to delete discount", error);
+      window.alert("Unable to delete this discount right now.");
+      deleteButton.textContent = originalText;
+      deleteButton.disabled = false;
+    }
   });
 
   const unsubscribe = subscribeToDiscounts(() => {

@@ -1,12 +1,11 @@
 import {
+  deleteOrder,
   fetchCustomersByIds,
   fetchOrderItemsByOrderIds,
   fetchOrders,
-  getOrderTotal,
 } from "@siggistore/services/admin";
 import { subscribeToOrders } from "@siggistore/services/admin/realtime.js";
 import { createTableUrlState } from "@siggistore/services/admin/table-state.js";
-import demoMyOrders from "../../../storefront/src/data/my-orders.json";
 
 const PAGE_SIZE = 10;
 const TAB_KEYS = ["all", "archived", "publish", "unpublish"];
@@ -15,6 +14,7 @@ const tableState = createTableUrlState({
   defaultPageSize: PAGE_SIZE,
   statusParam: "status",
 });
+const STOREFRONT_LATEST_ORDER_KEY = "appLatestOrder";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -25,23 +25,14 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function formatMoney(value) {
-  const amount = Number(value ?? 0);
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(Number.isFinite(amount) ? amount : 0);
-}
-
 function formatDate(value) {
   if (!value) return "Unknown";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   }).format(date);
 }
@@ -54,6 +45,26 @@ function titleCase(value) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
+}
+
+function getPaymentMethodDisplayLabel(method) {
+  const normalized = String(method ?? "").trim().toLowerCase();
+  if (normalized === "paypal") return "A la livraison";
+  if (normalized === "klarna") return "A la boutique";
+  if (normalized === "card") return "Par Chario";
+  return method ? titleCase(method) : "-";
+}
+
+function getOrderDisplayNumber(order) {
+  const raw =
+    order?.displayOrderNumber ||
+    order?.number ||
+    order?.order_number ||
+    order?.id;
+
+  if (!raw) return "#UNKNOWN";
+  const normalized = String(raw).trim();
+  return normalized.startsWith("#") ? normalized : `#${normalized.toUpperCase()}`;
 }
 
 function statusMeta(rawStatus) {
@@ -121,42 +132,48 @@ function buildEmptyRow(message, colspan = 9) {
   `;
 }
 
-function inferPaymentStatus(order) {
+function readStorefrontLatestOrder() {
+  try {
+    const raw = window.localStorage.getItem(STOREFRONT_LATEST_ORDER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.id) return null;
+    return parsed;
+  } catch (error) {
+    console.warn("Unable to read latest storefront order bridge.", error);
+    return null;
+  }
+}
+
+function getPaymentStatusLabel(order) {
   const explicitStatus =
     order?.payment_status ||
     order?.paymentStatus ||
     order?.payment?.status;
 
-  if (explicitStatus) return titleCase(explicitStatus);
-
-  const orderStatus = String(order?.status ?? "").toLowerCase();
-  if (["paid", "processing", "shipped", "delivered", "completed"].includes(orderStatus)) {
-    return "Paid";
-  }
-  if (orderStatus === "pending") return "Pending";
-  if (orderStatus === "refunded") return "Refunded";
-  if (["failed", "canceled", "cancelled"].includes(orderStatus)) return "Failed";
-
-  return "Unknown";
+  return explicitStatus ? titleCase(explicitStatus) : "-";
 }
 
-function inferPaymentMethod(order, fallbackIndex = 0) {
+function getPaymentMethodLabel(order) {
   const paymentMethod =
     order?.payment_method ||
     order?.paymentMethod ||
     order?.payment?.method;
 
   if (paymentMethod && typeof paymentMethod === "object") {
-    const type = paymentMethod.type || paymentMethod.brand || "Card";
+    const type = paymentMethod.type || paymentMethod.brand || "";
     const last4 =
       paymentMethod.last4 ||
       paymentMethod.last_4 ||
       paymentMethod.lastDigits;
-    return last4 ? `${titleCase(type)} **** ${last4}` : titleCase(type);
+    if (!type && !last4) return "-";
+    return last4
+      ? `${titleCase(type || "Card")} **** ${last4}`
+      : titleCase(type);
   }
 
   if (typeof paymentMethod === "string" && paymentMethod.trim()) {
-    return titleCase(paymentMethod);
+    return getPaymentMethodDisplayLabel(paymentMethod);
   }
 
   const explicitType =
@@ -165,70 +182,46 @@ function inferPaymentMethod(order, fallbackIndex = 0) {
     order?.payment_brand;
   const explicitLast4 = order?.payment_last4 || order?.last4;
   if (explicitType || explicitLast4) {
-    const type = explicitType ? titleCase(explicitType) : "Card";
+    const type = explicitType ? getPaymentMethodDisplayLabel(explicitType) : "Par Chario";
     return explicitLast4 ? `${type} **** ${explicitLast4}` : type;
   }
 
-  const demoMethods = ["Visa **** 4242", "PayPal", "Apple Pay"];
-  return demoMethods[fallbackIndex % demoMethods.length];
+  return "-";
 }
 
 function getCustomerLookupKeys(order) {
   return [order?.user_id, order?.customer_id].filter(Boolean);
 }
 
-function buildDemoOrders() {
-  const orders = demoMyOrders?.pageContent?.orders ?? [];
-
-  return orders.map((order, index) => ({
-    id: order.id || `demo-order-${index + 1}`,
-    number: order.number || `#DEMO-${String(index + 1).padStart(4, "0")}`,
-    status: String(order.status || "pending").toLowerCase(),
-    created_at: order.date || null,
-    total: Number(order.total ?? 0),
-    total_amount: Number(order.total ?? 0),
-    customerName: `Customer ${index + 1}`,
-    customerSubtext: "Demo order",
-    paymentMethodLabel: inferPaymentMethod(order, index),
-    paymentStatusLabel:
-      String(order.status || "").toLowerCase() === "delivered"
-        ? "Paid"
-        : titleCase(order.status || "Pending"),
-    itemCount: Array.isArray(order.items) ? order.items.length : Number(order.itemCount ?? 0),
-  }));
+function getCustomerName(order, customer) {
+  return (
+    order.customerName ||
+    customer.name ||
+    customer.full_name ||
+    [customer.first_name, customer.last_name].filter(Boolean).join(" ").trim() ||
+    "-"
+  );
 }
 
-function buildOrderView(order, customerMap, itemCountMap, fallbackIndex = 0) {
+function getCustomerSubtext(order, customer) {
+  return order.customerSubtext || customer.email || customer.phone || "-";
+}
+
+function buildOrderView(order, customerMap, itemCountMap) {
   const customer =
     getCustomerLookupKeys(order)
       .map((key) => customerMap.get(key))
       .find(Boolean) ?? {};
-  const orderId = order.id ?? order.order_id ?? `unknown-${fallbackIndex}`;
 
   return {
     id: order.id,
     status: order.status ?? "pending",
-    orderLabel:
-      order.number ||
-      order.order_number ||
-      `#${String(orderId).slice(0, 8).toUpperCase()}`,
+    orderLabel: getOrderDisplayNumber(order),
     purchasedLabel: formatDate(order.created_at || order.date),
-    customerName:
-      order.customerName ||
-      customer.name ||
-      customer.full_name ||
-      customer.email ||
-      customer.phone ||
-      "Guest customer",
-    customerSubtext:
-      order.customerSubtext ||
-      customer.email ||
-      customer.phone ||
-      formatMoney(getOrderTotal(order)),
-    paymentMethodLabel:
-      order.paymentMethodLabel || inferPaymentMethod(order, fallbackIndex),
-    paymentStatusLabel:
-      order.paymentStatusLabel || inferPaymentStatus(order),
+    customerName: getCustomerName(order, customer),
+    customerSubtext: getCustomerSubtext(order, customer),
+    paymentMethodLabel: getPaymentMethodLabel(order),
+    paymentStatusLabel: getPaymentStatusLabel(order),
     itemCount:
       itemCountMap.get(order.id) ??
       (Array.isArray(order.items) ? order.items.length : 0),
@@ -288,6 +281,9 @@ function buildOrderRow(view) {
               <a class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu" href="./order-details.html?order=${encodeURIComponent(view.id)}">
                 View
               </a>
+              <button type="button" class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu" data-order-delete="${escapeHtml(view.id)}">
+                Delete
+              </button>
             </div>
           </div>
         </div>
@@ -357,34 +353,16 @@ async function initOrdersPage() {
       syncTabButtons(currentTab);
       searchInput.value = query;
 
-      let orders = [];
-      let usingDemoData = false;
-
-      try {
-        orders = await fetchOrders({
-          limit: 100,
-          query,
-        });
-      } catch (error) {
-        console.error("Falling back to demo orders data", error);
-        usingDemoData = true;
-
-        const normalizedQuery = String(query || "").trim().toLowerCase();
-        orders = buildDemoOrders().filter((order) => {
-          if (!normalizedQuery) return true;
-          return [
-            order.id,
-            order.number,
-            order.customerName,
-            order.customerSubtext,
-            order.status,
-          ]
-            .filter(Boolean)
-            .some((value) =>
-              String(value).toLowerCase().includes(normalizedQuery),
-            );
-        });
-      }
+      const fetchedOrders = await fetchOrders({
+        limit: 100,
+        query,
+      });
+      const bridgeOrder = readStorefrontLatestOrder();
+      const orders = fetchedOrders.length
+        ? fetchedOrders
+        : bridgeOrder
+          ? [bridgeOrder]
+          : [];
 
       const filteredOrders = filterOrdersByTab(orders, currentTab);
       const totalResults = filteredOrders.length;
@@ -405,15 +383,10 @@ async function initOrdersPage() {
       ];
       const orderIds = pageOrders.map((order) => order.id).filter(Boolean);
 
-      const [customersResult, orderItemsResult] = usingDemoData
-        ? [
-            { status: "fulfilled", value: [] },
-            { status: "fulfilled", value: [] },
-          ]
-        : await Promise.allSettled([
-            userIds.length ? fetchCustomersByIds(userIds) : Promise.resolve([]),
-            orderIds.length ? fetchOrderItemsByOrderIds(orderIds) : Promise.resolve([]),
-          ]);
+      const [customersResult, orderItemsResult] = await Promise.allSettled([
+        userIds.length ? fetchCustomersByIds(userIds) : Promise.resolve([]),
+        orderIds.length ? fetchOrderItemsByOrderIds(orderIds) : Promise.resolve([]),
+      ]);
 
       const customers =
         customersResult.status === "fulfilled" ? customersResult.value : [];
@@ -451,11 +424,7 @@ async function initOrdersPage() {
         );
       } else {
         tableBody.innerHTML = pageOrders
-          .map((order, index) =>
-            buildOrderRow(
-              buildOrderView(order, customerMap, itemCountMap, index),
-            ),
-          )
+          .map((order) => buildOrderRow(buildOrderView(order, customerMap, itemCountMap)))
           .join("");
       }
 
@@ -492,6 +461,31 @@ async function initOrdersPage() {
     const state = tableState.getState();
     tableState.setPage((state.page || 1) + 1);
     render();
+  });
+
+  tableBody.addEventListener("click", async (event) => {
+    const deleteButton = event.target.closest("[data-order-delete]");
+    if (!deleteButton) return;
+
+    const orderId = deleteButton.getAttribute("data-order-delete");
+    if (!orderId) return;
+
+    const shouldDelete = window.confirm(`Delete order ${orderId}?`);
+    if (!shouldDelete) return;
+
+    const originalText = deleteButton.textContent;
+    deleteButton.textContent = "Deleting...";
+    deleteButton.disabled = true;
+
+    try {
+      await deleteOrder(orderId);
+      render();
+    } catch (error) {
+      console.error("Failed to delete order", error);
+      window.alert("Unable to delete this order right now.");
+      deleteButton.textContent = originalText;
+      deleteButton.disabled = false;
+    }
   });
 
   tabButtons.forEach((button) => {

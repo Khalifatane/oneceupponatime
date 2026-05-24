@@ -1488,11 +1488,33 @@
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "";
 
-    return date.toLocaleDateString("en-US", options || {
-      month: "2-digit",
+    return date.toLocaleDateString("en-GB", options || {
       day: "2-digit",
+      month: "2-digit",
       year: "numeric",
     });
+  }
+
+  function formatOrderTime(value) {
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }
+
+  function formatOrderDateTime(value) {
+    const dateLabel = formatOrderDate(value);
+    const timeLabel = formatOrderTime(value);
+
+    if (!dateLabel) return "";
+    if (!timeLabel) return dateLabel;
+    return dateLabel + " " + timeLabel;
   }
 
   function formatOrderAddress(address) {
@@ -1519,12 +1541,7 @@
     const deliveryDate = new Date(createdAt);
     deliveryDate.setDate(deliveryDate.getDate() + transitDays);
 
-    return deliveryDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return formatOrderDate(deliveryDate);
   }
 
   function getLatestOrderStatusLabel(order) {
@@ -2185,7 +2202,7 @@
       });
     });
 
-    const logoLink = document.querySelector('header a[aria-label="Preline"]');
+    const logoLink = document.querySelector('header .jdzig a.flex-none');
     if (logoLink) {
       logoLink.setAttribute("href", isAdminApp ? "/admin/" : "/");
     }

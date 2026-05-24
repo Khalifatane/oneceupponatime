@@ -233,6 +233,12 @@ export async function updateOrderStatus(orderId: string, status: string) {
   return normalizeOrder(data);
 }
 
+export async function deleteOrder(orderId: string) {
+  const { error } = await supabase.from('orders').delete().eq('id', orderId);
+  if (error) throw error;
+  return { id: orderId };
+}
+
 // ===== CUSTOMERS =====
 
 export async function fetchCustomers(options: any = {}) {
@@ -568,6 +574,14 @@ export async function createDiscount(input: any = {}) {
     triedMissingColumns.add(missingColumn);
     delete payload[missingColumn];
   }
+}
+
+export async function deleteDiscount(discountId: string) {
+  const { error } = await supabase.from('discounts').delete().eq('id', discountId);
+
+  if (error) throw error;
+
+  return { id: discountId };
 }
 
 // ===== PRODUCT REVIEWS =====
