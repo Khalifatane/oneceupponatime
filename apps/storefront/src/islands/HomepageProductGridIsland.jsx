@@ -10,17 +10,17 @@ const promoCards = [
     key: "promo-top",
     href: "./Product Listing.html#",
     image: "/images/photo-1603218190297-df1c6af07965.jpg",
-    priceLabel: "$99",
-    title: "Mahabis Classic",
-    cta: "Shop now",
+    priceLabel: "",
+    title: "",
+    cta: "Voir tout les produits",
   },
   {
     key: "promo-bottom",
     href: "./Product Listing.html#",
     image: "/images/photo-1708443683295-5b9b4a125687.jpg",
-    priceLabel: "From $60",
-    title: "Denims for Days",
-    cta: "Shop now",
+    priceLabel: "",
+    title: "",
+    cta: "voir tout les produits",
   },
 ];
 

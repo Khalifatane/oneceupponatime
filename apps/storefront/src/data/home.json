@@ -3,11 +3,11 @@
   "description": "Engaging shopping experiences with advanced product filters, detailed descriptions, easy checkout, and full account management.",
   "hero": {
     "backgroundImage": "/images/hero-banner.jpg",
-    "badge": "Summer sale",
-    "title": "Up to 50% off",
+    "badge": "",
+    "title": "",
     "buttons": [
-      { "label": "Shop men", "href": "/product-listing?category=men", "variant": "outline-light" },
-      { "label": "Shop women", "href": "/product-listing?category=women", "variant": "outline-light" }
+      { "label": "For men", "href": "/product-listing?category=men", "variant": "outline-light" },
+      { "label": "For women", "href": "/product-listing?category=women", "variant": "outline-light" }
     ]
   },
   "sections": [
