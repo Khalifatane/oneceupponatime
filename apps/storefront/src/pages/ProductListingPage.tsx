@@ -64,9 +64,9 @@ export default function ProductListingPage() {
               <p className="text-xs text-gray-500">{product.category}</p>
               <div className="flex items-center gap-2 mt-1">
                 {product.originalPrice && (
-                  <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
+                  <span className="text-sm text-gray-400 line-through">{product.originalPrice} FCFA</span>
                 )}
-                <span className="text-sm font-medium">${product.price}</span>
+                <span className="text-sm font-medium">{product.price} FCFA</span>
               </div>
               <div className="flex items-center gap-1 mt-1">
                 <div className="flex">

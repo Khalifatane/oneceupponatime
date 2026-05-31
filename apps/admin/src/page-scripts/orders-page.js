@@ -27,7 +27,7 @@ function escapeHtml(value) {
 }
 
 function formatDate(value) {
-  if (!value) return "Unknown";
+  if (!value) return "Inconnu";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
 
@@ -46,6 +46,23 @@ function titleCase(value) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
+}
+
+function translateStatusLabel(value) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  const labels = {
+    paid: "Paye",
+    processing: "En traitement",
+    shipped: "Expedie",
+    delivered: "Livre",
+    completed: "Termine",
+    failed: "Echoue",
+    canceled: "Annule",
+    cancelled: "Annule",
+    refunded: "Rembourse",
+    pending: "En attente",
+  };
+  return labels[normalized] || titleCase(value);
 }
 
 function getPaymentMethodDisplayLabel(method) {
@@ -70,7 +87,7 @@ function getOrderDisplayNumber(order) {
 
 function statusMeta(rawStatus) {
   const status = String(rawStatus ?? "pending").toLowerCase();
-  const label = titleCase(status);
+  const label = translateStatusLabel(status);
 
   if (["paid", "processing", "shipped", "delivered", "completed"].includes(status)) {
     return {
@@ -215,7 +232,7 @@ function getPaymentStatusLabel(order) {
     order?.payment?.status ||
     order?.status;
 
-  return explicitStatus ? titleCase(explicitStatus) : "Pending";
+  return explicitStatus ? translateStatusLabel(explicitStatus) : "En attente";
 }
 
 function getPhoneNumberLabel(order, customer) {
@@ -277,7 +294,7 @@ function getCustomerName(order, customer) {
     order.email ||
     order.shipping_address?.email ||
     customer.email ||
-    "Guest customer"
+    "Client invite"
   );
 }
 
@@ -291,7 +308,7 @@ function getCustomerSubtext(order, customer) {
     order.shipping_address?.phone ||
     "";
   const name = getCustomerName(order, customer);
-  return value && value !== name ? value : "Guest order";
+  return value && value !== name ? value : "Commande invitee";
 }
 
 function buildOrderView(order, customerMap, itemCountMap) {
@@ -366,10 +383,10 @@ function buildOrderRow(view) {
           <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 mvv53 transition-[opacity,margin] duration opacity-0 hidden nnhrf khfq6 mak94 ocfsa ictpa p6d5j" role="menu" aria-orientation="vertical" tabindex="-1">
             <div class="i0yn8">
               <a class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu" href="./order-details.html?order=${encodeURIComponent(view.id)}">
-                View
+                Voir
               </a>
               <button type="button" class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu" data-order-delete="${escapeHtml(view.id)}">
-                Delete
+                Supprimer
               </button>
             </div>
           </div>
@@ -503,7 +520,7 @@ async function initOrdersPage() {
         );
       });
 
-      title.textContent = `Orders (${totalResults.toLocaleString()})`;
+      title.textContent = `Commandes (${totalResults.toLocaleString()})`;
       count.textContent = String(totalResults);
       pageIndicators[0].textContent = String(safePage);
       pageIndicators[2].textContent = String(totalPages);
@@ -513,8 +530,8 @@ async function initOrdersPage() {
       if (!pageOrders.length) {
         tableBody.innerHTML = buildEmptyRow(
           query
-            ? "No orders match your current search."
-            : "No orders found for this tab yet.",
+            ? "Aucune commande ne correspond a votre recherche."
+            : "Aucune commande trouvee pour cet onglet.",
         );
       } else {
         tableBody.innerHTML = pageOrders
@@ -526,7 +543,7 @@ async function initOrdersPage() {
     } catch (error) {
       console.error("Failed to render orders page", error);
       tableBody.innerHTML = buildEmptyRow(
-        "Unable to load orders right now.",
+        "Impossible de charger les commandes pour le moment.",
       );
       count.textContent = "0";
     } finally {
@@ -564,11 +581,11 @@ async function initOrdersPage() {
     const orderId = deleteButton.getAttribute("data-order-delete");
     if (!orderId) return;
 
-    const shouldDelete = window.confirm(`Delete order ${orderId}?`);
+    const shouldDelete = window.confirm(`Supprimer la commande ${orderId} ?`);
     if (!shouldDelete) return;
 
     const originalText = deleteButton.textContent;
-    deleteButton.textContent = "Deleting...";
+    deleteButton.textContent = "Suppression...";
     deleteButton.disabled = true;
 
     try {
@@ -580,7 +597,7 @@ async function initOrdersPage() {
       render();
     } catch (error) {
       console.error("Failed to delete order", error);
-      window.alert("Unable to delete this order right now.");
+      window.alert("Impossible de supprimer cette commande pour le moment.");
       deleteButton.textContent = originalText;
       deleteButton.disabled = false;
     }

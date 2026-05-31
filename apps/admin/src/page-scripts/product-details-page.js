@@ -45,7 +45,7 @@ function updateSelectValue(select, value) {
 function getProductRuntimeErrorMessage(error, fallback) {
   const message = String(error?.message || "");
   if (/products_runtime|schema cache|relation .* does not exist/i.test(message)) {
-    return "Product runtime table is missing. Run scripts/create-products-runtime-table.sql in Supabase, then try again.";
+    return "La table products_runtime est manquante. Executez scripts/create-products-runtime-table.sql dans Supabase, puis reessayez.";
   }
   return message ? `${fallback}: ${message}` : `${fallback}.`;
 }
@@ -109,7 +109,7 @@ function applyStoredDisplayEdit(product, edit) {
     availabilityInput.checked = edit.isAvailable;
   }
 
-  updateSelectValue(categorySelect, edit.category || product.category || "Uncategorized");
+  updateSelectValue(categorySelect, edit.category || product.category || "Sans categorie");
 
   if (tagsInput && Array.isArray(edit.tags)) {
     tagsInput.value = edit.tags.join(", ");
@@ -145,8 +145,8 @@ function applyStoredDisplayEdit(product, edit) {
         const sizeInput = row.querySelector('input[id^="hs-pro-epdvts"]');
         const colorInput = row.querySelector('input[id^="hs-pro-epdvtc"]');
         const quantityInput = row.querySelector('input[id^="hs-pro-epdvtq"]');
-        if (sizeInput) sizeInput.value = variant.size || "One size";
-        if (colorInput) colorInput.value = variant.color || "Default";
+        if (sizeInput) sizeInput.value = variant.size || "Taille unique";
+        if (colorInput) colorInput.value = variant.color || "Par defaut";
         if (quantityInput) quantityInput.value = String(Math.max(0, Number(variant.quantity || 0) || 0));
       });
     }
@@ -157,7 +157,7 @@ function applyStoredDisplayEdit(product, edit) {
 
 function bindDisplayEditSave(product) {
   const saveLink = Array.from(document.querySelectorAll("a")).find(
-    (link) => link.textContent.trim().toLowerCase() === "save changes",
+    (link) => ["save changes", "enregistrer les modifications"].includes(link.textContent.trim().toLowerCase()),
   );
   if (!saveLink || saveLink.dataset.productDisplaySaveBound === "true") return;
 
@@ -181,7 +181,7 @@ function bindDisplayEditSave(product) {
     }
 
     const display = {
-      category: categorySelect?.value || product.category || "Uncategorized",
+      category: categorySelect?.value || product.category || "Sans categorie",
       isAvailable,
       tags,
       variants,
@@ -189,7 +189,7 @@ function bindDisplayEditSave(product) {
     };
 
     const originalText = saveLink.textContent;
-    saveLink.textContent = "Saving...";
+    saveLink.textContent = "Enregistrement...";
     saveLink.style.pointerEvents = "none";
 
     try {
@@ -197,14 +197,14 @@ function bindDisplayEditSave(product) {
         table: PRODUCT_RUNTIME_TABLE,
       });
       Object.assign(product, mergeProductWithRuntime(product, runtime));
-      saveLink.textContent = "Saved";
+      saveLink.textContent = "Enregistre";
     } catch (error) {
       console.error("Failed to save product display controls", error);
-      saveLink.textContent = "Setup required";
-      saveLink.title = getProductRuntimeErrorMessage(error, "Save failed");
+      saveLink.textContent = "Configuration requise";
+      saveLink.title = getProductRuntimeErrorMessage(error, "Echec de l'enregistrement");
     } finally {
       window.setTimeout(() => {
-        saveLink.textContent = originalText || "Save changes";
+        saveLink.textContent = originalText || "Enregistrer les modifications";
         saveLink.removeAttribute("title");
         saveLink.style.pointerEvents = "";
       }, 1200);
@@ -303,7 +303,7 @@ async function initProductDetailsPage() {
           : Boolean(currentProduct.isAvailable);
     }
 
-    updateSelectValue(categorySelect, storedDisplayEdit?.category || currentProduct.category || "Uncategorized");
+    updateSelectValue(categorySelect, storedDisplayEdit?.category || currentProduct.category || "Sans categorie");
 
     if (tagsInput) {
       const channels = Array.isArray(storedDisplayEdit?.tags)
@@ -316,7 +316,7 @@ async function initProductDetailsPage() {
 
     const colorInputs = Array.from(document.querySelectorAll('input[id^="hs-pro-epdvtc"]'));
     colorInputs.forEach((input) => {
-      if (!input.value) input.value = currentProduct.category || "Default";
+      if (!input.value) input.value = currentProduct.category || "Par defaut";
     });
 
     applyStoredDisplayEdit(currentProduct, storedDisplayEdit);

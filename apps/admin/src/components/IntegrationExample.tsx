@@ -9,22 +9,22 @@ export function IntegrationExample() {
     <section className="page-card stack">
       <div className="page-header">
         <div>
-          <h2>Integration Example</h2>
-          <p className="muted">Sanity and Supabase consumed from the hook layer.</p>
+          <h2>Exemple d'integration</h2>
+          <p className="muted">Sanity et Supabase sont consommes depuis la couche de hooks.</p>
         </div>
       </div>
       <div className="page-grid">
         <article className="stat-card">
-          <div className="muted">Revenue</div>
-          <strong>{loading ? "Loading..." : formatMoney(data?.metrics.revenue ?? 0)}</strong>
+          <div className="muted">Revenu</div>
+          <strong>{loading ? "Chargement..." : formatMoney(data?.metrics.revenue ?? 0)}</strong>
         </article>
         <article className="stat-card">
-          <div className="muted">Orders</div>
-          <strong>{loading ? "Loading..." : data?.metrics.orders ?? 0}</strong>
+          <div className="muted">Commandes</div>
+          <strong>{loading ? "Chargement..." : data?.metrics.orders ?? 0}</strong>
         </article>
         <article className="stat-card">
-          <div className="muted">Products</div>
-          <strong>{productsLoading ? "Loading..." : products.length}</strong>
+          <div className="muted">Produits</div>
+          <strong>{productsLoading ? "Chargement..." : products.length}</strong>
         </article>
       </div>
     </section>

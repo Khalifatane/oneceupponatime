@@ -48,7 +48,7 @@
       "type": "shippingMethod",
       "options": [
         { "id": "standard", "label": "Standard Shipping (3-5 business days)", "priceLabel": "Free", "selected": true },
-        { "id": "express", "label": "Express Shipping (1-2 business days)", "priceLabel": "$9.99", "selected": false }
+        { "id": "express", "label": "Express Shipping (1-2 business days)", "priceLabel": "1 500 FCFA", "selected": false }
       ]
     }
   ],
@@ -63,7 +63,7 @@
     "estimatedTax": "Calculated at checkout",
     "saleDiscount": null,
     "total": 229,
-    "currency": "USD",
+    "currency": "XOF",
     "items": [
       { "name": "Nike Air Force 1", "color": "White", "size": "M", "quantity": 1, "price": 149 },
       { "name": "Camo Blend Jacket", "color": "Camo", "size": "M", "quantity": 1, "price": 40 },

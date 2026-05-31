@@ -7,19 +7,19 @@ export function ProductListingPage() {
 
   return (
     <PlaceholderPage
-      title="Product Listing"
-      description="Sanity-backed product catalog inside the typed SPA runtime."
+      title="Liste des produits"
+      description="Catalogue produits Sanity dans le runtime SPA type."
     >
       {loading ? (
-        <p className="muted">Loading products...</p>
+        <p className="muted">Chargement des produits...</p>
       ) : (
         <table className="table-preview">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Status</th>
+              <th>Nom</th>
+              <th>Categorie</th>
+              <th>Prix</th>
+              <th>Statut</th>
             </tr>
           </thead>
           <tbody>

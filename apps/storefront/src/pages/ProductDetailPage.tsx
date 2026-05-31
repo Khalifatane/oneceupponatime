@@ -40,7 +40,7 @@ export default function ProductDetailPage() {
             <span className="text-sm text-gray-600">{product.reviewCount} reviews</span>
           </div>
 
-          <p className="text-2xl font-semibold mb-4">${product.price}</p>
+          <p className="text-2xl font-semibold mb-4">{product.price} FCFA</p>
 
           {/* Colors */}
           <div className="mb-4">
@@ -131,7 +131,7 @@ export default function ProductDetailPage() {
               </div>
               <p className="font-medium text-sm">{product.name}</p>
               <p className="text-xs text-gray-500">{product.category}</p>
-              <p className="text-sm font-medium mt-1">${product.price}</p>
+              <p className="text-sm font-medium mt-1">{product.price} FCFA</p>
             </Link>
           ))}
         </div>

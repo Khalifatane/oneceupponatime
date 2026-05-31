@@ -420,7 +420,7 @@
       });
       const priceText = priceBlocks.find(function (text) {
         return /\$\d/.test(text);
-      }) || "$0";
+      }) || "0 FCFA";
       const buttons = row.querySelectorAll(".d8sjl");
       const select = row.querySelector("select");
       const image = row.querySelector("img");
@@ -869,7 +869,7 @@
     );
     const price = typeof (product && product.price) === "number"
       ? formatPrice(product.price)
-      : "$0";
+      : "0 FCFA";
     const originalPrice = typeof (product && product.originalPrice) === "number"
       ? formatPrice(product.originalPrice)
       : "";
@@ -1086,7 +1086,7 @@
       items: cartItems,
       subtotal: subtotal,
       total: total,
-      currency: "USD",
+      currency: "XOF",
     };
   }
 
@@ -1737,7 +1737,7 @@
         promo_code: currentDraft.promoCode,
         promo_discount: currentDraft.promoDiscount,
         total: currentDraft.total,
-        currency: currentDraft.currency || "USD",
+        currency: currentDraft.currency || "XOF",
         items: currentDraft.items.map(function (item) {
           return {
             product_id: item.product_id || item.id,

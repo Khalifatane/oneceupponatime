@@ -1,2 +1,2 @@
 import { PlaceholderPage } from "./_helpers";
-export function CreateAccountPage() { return <PlaceholderPage title="Create Account" description="Account creation route scaffold for the SPA runtime." />; }
+export function CreateAccountPage() { return <PlaceholderPage title="Creer un compte" description="Base de creation de compte pour le runtime SPA." />; }

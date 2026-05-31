@@ -7,17 +7,17 @@ export function Navbar() {
   return (
     <header className="topbar">
       <div>
-        <strong>Dashboard Hybrid Admin</strong>
-        <div className="muted">HTML runtime + TypeScript SPA</div>
+        <strong>Admin hybride</strong>
+        <div className="muted">Runtime HTML + SPA TypeScript</div>
       </div>
       <nav>
-        <NavLink className="nav-link" to="/">Home</NavLink>
-        <NavLink className="nav-link" to="/product-listing">Products</NavLink>
-        <NavLink className="nav-link" to="/my-orders">Orders</NavLink>
-        <NavLink className="nav-link" to="/personal-info">Account</NavLink>
+        <NavLink className="nav-link" to="/">Accueil</NavLink>
+        <NavLink className="nav-link" to="/product-listing">Produits</NavLink>
+        <NavLink className="nav-link" to="/my-orders">Commandes</NavLink>
+        <NavLink className="nav-link" to="/personal-info">Compte</NavLink>
       </nav>
       <div className="pill">
-        {status === "authenticated" ? user?.email : "Guest mode"}
+        {status === "authenticated" ? user?.email : "Mode invite"}
       </div>
     </header>
   );

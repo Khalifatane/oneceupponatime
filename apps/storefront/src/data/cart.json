@@ -7,7 +7,7 @@
   "cartTitle": "Shopping Cart",
   "items": [],
   "features": [
-    { "title": "Free shipping", "description": "On all orders over $50" },
+    { "title": "Free shipping", "description": "On all orders over 50 000 FCFA" },
     { "title": "Easy returns", "description": "30-day hassle-free returns" },
     { "title": "Secure checkout", "description": "256-bit SSL encryption" }
   ],
@@ -21,7 +21,7 @@
     "estimatedTax": "Calculated at checkout",
     "saleDiscount": null,
     "total": 229,
-    "currency": "USD"
+    "currency": "XOF"
   },
   "actions": {
     "checkoutButton": "Proceed to Checkout",

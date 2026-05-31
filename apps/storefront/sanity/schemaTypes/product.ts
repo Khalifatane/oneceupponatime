@@ -41,7 +41,7 @@ export default {
       name: 'currency',
       title: 'Currency',
       type: 'string',
-      initialValue: 'USD',
+      initialValue: 'XOF',
       validation: (Rule: any) => Rule.required(),
     },
     {

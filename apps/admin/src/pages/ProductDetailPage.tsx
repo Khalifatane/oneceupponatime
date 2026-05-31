@@ -10,11 +10,11 @@ export function ProductDetailPage() {
 
   return (
     <PlaceholderPage
-      title="Product Detail"
-      description="Route params are resolved into Sanity lookups through the hook layer."
+      title="Detail produit"
+      description="Les parametres de route sont resolus en recherches Sanity via la couche de hooks."
     >
       {loading ? (
-        <p className="muted">Loading product...</p>
+        <p className="muted">Chargement du produit...</p>
       ) : product ? (
         <div className="stack">
           <strong>{product.name}</strong>
@@ -22,7 +22,7 @@ export function ProductDetailPage() {
           <span>{formatMoney(product.price)}</span>
         </div>
       ) : (
-        <p className="muted">No product selected.</p>
+        <p className="muted">Aucun produit selectionne.</p>
       )}
     </PlaceholderPage>
   );

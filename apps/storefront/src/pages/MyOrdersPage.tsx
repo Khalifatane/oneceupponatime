@@ -61,7 +61,7 @@ export default function MyOrdersPage() {
                     </div>
                     <p className="text-sm text-gray-500">{order.date}</p>
                   </div>
-                  <span className="text-lg font-medium">${order.total}</span>
+                  <span className="text-lg font-medium">{order.total} FCFA</span>
                 </div>
 
                 {/* Timeline */}

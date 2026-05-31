@@ -196,7 +196,7 @@ export default function App() {
     fetch(`${ADMIN_BASE}/pages/home.html`)
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Could not load admin markup.");
+          throw new Error("Impossible de charger le balisage admin.");
         }
 
         return response.text();
@@ -218,8 +218,8 @@ export default function App() {
   if (error) {
     return (
       <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-        <h1>Unable to load storefront</h1>
-        <h1>Unable to load dashboard</h1>
+        <h1>Impossible de charger l'interface admin</h1>
+        <h1>Impossible de charger le tableau de bord</h1>
         <p>{error}</p>
       </main>
     );

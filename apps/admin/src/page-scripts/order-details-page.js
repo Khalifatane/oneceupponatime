@@ -29,15 +29,15 @@ function escapeHtml(value) {
 
 function formatMoney(value) {
   const amount = Number(value ?? 0);
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("fr-SN", {
     style: "currency",
-    currency: "USD",
+    currency: "XOF",
     maximumFractionDigits: 2,
   }).format(Number.isFinite(amount) ? amount : 0);
 }
 
 function formatDateTime(value) {
-  if (!value) return "Unknown";
+  if (!value) return "Inconnu";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
 
@@ -52,7 +52,7 @@ function formatDateTime(value) {
 }
 
 function formatDateTimeLabel(value) {
-  if (!value) return "Unknown";
+  if (!value) return "Inconnu";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
 
@@ -77,6 +77,23 @@ function titleCase(value) {
     .join(" ");
 }
 
+function translateStatusLabel(value) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  const labels = {
+    paid: "Paye",
+    processing: "En traitement",
+    shipped: "Expedie",
+    delivered: "Livre",
+    completed: "Termine",
+    failed: "Echoue",
+    canceled: "Annule",
+    cancelled: "Annule",
+    refunded: "Rembourse",
+    pending: "En attente",
+  };
+  return labels[normalized] || titleCase(value);
+}
+
 function getPaymentMethodDisplayLabel(method) {
   const normalized = String(method ?? "").trim().toLowerCase();
   if (normalized === "paypal") return "A la livraison";
@@ -91,12 +108,12 @@ function paymentBadgeMeta(order) {
     order?.paymentStatus ||
     order?.payment?.status ||
     "pending";
-  const label = titleCase(raw);
+  const label = translateStatusLabel(raw);
   const normalized = String(raw).toLowerCase();
 
   if (["paid", "processing", "shipped", "delivered", "completed"].includes(normalized)) {
     return {
-      label: normalized === "processing" ? "Paid" : label,
+      label: normalized === "processing" ? "Paye" : label,
       className:
         "dg39k o8oua inline-flex items-center i220p m859b at2zb qn8tw k73c1 nj29a dark:bg-green-500/10 dark:text-green-500",
     };
@@ -104,7 +121,7 @@ function paymentBadgeMeta(order) {
 
   if (["failed", "canceled", "cancelled", "refunded"].includes(normalized)) {
     return {
-      label: normalized === "canceled" ? "Cancelled" : label,
+      label: normalized === "canceled" ? "Annule" : label,
       className:
         "dg39k o8oua inline-flex items-center i220p m859b at2zb olwac oz3g9 nj29a dark:bg-red-500/10 dark:text-red-500",
     };
@@ -122,7 +139,7 @@ function fulfillmentBadgeMeta(order) {
 
   if (["shipped", "delivered", "completed"].includes(normalized)) {
     return {
-      label: normalized === "shipped" ? "Shipped" : "Fulfilled",
+      label: normalized === "shipped" ? "Expedie" : "Traite",
       className:
         "dg39k o8oua inline-flex items-center i220p m859b at2zb qn8tw k73c1 nj29a dark:bg-green-500/10 dark:text-green-500",
     };
@@ -130,7 +147,7 @@ function fulfillmentBadgeMeta(order) {
 
   if (["failed", "canceled", "cancelled", "refunded"].includes(normalized)) {
     return {
-      label: titleCase(normalized),
+      label: translateStatusLabel(normalized),
       className:
         "dg39k o8oua inline-flex items-center i220p m859b at2zb olwac oz3g9 nj29a dark:bg-red-500/10 dark:text-red-500",
     };
@@ -138,14 +155,14 @@ function fulfillmentBadgeMeta(order) {
 
   if (normalized === "processing") {
     return {
-      label: "Processing",
+      label: "En traitement",
       className:
         "dg39k o8oua inline-flex items-center i220p m859b at2zb nck10 h3ns9 nj29a",
     };
   }
 
   return {
-    label: "Unfulfilled",
+    label: "Non traite",
     className:
       "dg39k o8oua inline-flex items-center i220p m859b at2zb axv3m ssl0y nj29a dark:bg-yellow-500/10 dark:text-yellow-500",
   };
@@ -156,7 +173,7 @@ function getCustomerLookupKeys(order) {
 }
 
 function formatAddressHtml(address) {
-  if (!address) return "Not provided";
+  if (!address) return "Non renseigne";
 
   const seen = new Set();
   const lines = [
@@ -175,7 +192,7 @@ function formatAddressHtml(address) {
       return true;
     });
 
-  return lines.length ? lines.map(escapeHtml).join("<br>") : "Not provided";
+  return lines.length ? lines.map(escapeHtml).join("<br>") : "Non renseigne";
 }
 
 function inferPaymentMethod(order) {
@@ -192,7 +209,7 @@ function inferPaymentMethod(order) {
       paymentMethod.lastDigits;
     return {
       label: type,
-      cardLabel: last4 ? `Card Number: ************ ${last4}` : type,
+      cardLabel: last4 ? `Numero de carte: ************ ${last4}` : type,
     };
   }
 
@@ -206,7 +223,7 @@ function inferPaymentMethod(order) {
 
   return {
     label: "Par Chario",
-    cardLabel: "Card Number: Not provided",
+    cardLabel: "Numero de carte: non renseigne",
   };
 }
 
@@ -218,7 +235,7 @@ function getOrderDisplayNumber(order, fallbackId = "") {
     order?.id ||
     fallbackId;
 
-  if (!raw) return "#UNKNOWN";
+  if (!raw) return "#INCONNU";
   const normalized = String(raw).trim();
   return normalized.startsWith("#") ? normalized : `#${normalized.toUpperCase()}`;
 }
@@ -241,7 +258,7 @@ function inferItemLabel(item) {
     item?.product_title ||
     item?.product_name ||
     item?.sku ||
-    "Order item"
+    "Article commande"
   );
 }
 
@@ -278,12 +295,12 @@ function buildItemMarkup(item, order, productMap) {
         <div class="uj5nx rogrs">
           <div class="tex4h hfud4 f82od q3gap">
             <div>
-              <h4 class="p3x4c m859b f1ztf">Item</h4>
+              <h4 class="p3x4c m859b f1ztf">Article</h4>
               <p class="yymkp c4t4j">${escapeHtml(matchedProduct?.name || inferItemLabel(item))}</p>
             </div>
 
             <div>
-              <h4 class="p3x4c m859b f1ztf">Color</h4>
+              <h4 class="p3x4c m859b f1ztf">Couleur</h4>
               <p class="yymkp c4t4j">${escapeHtml(inferItemColor(item))}</p>
             </div>
           </div>
@@ -292,12 +309,12 @@ function buildItemMarkup(item, order, productMap) {
         <div class="uj5nx rogrs">
           <div class="tex4h hfud4 f82od q3gap">
             <div>
-              <h4 class="p3x4c m859b f1ztf">Size</h4>
+              <h4 class="p3x4c m859b f1ztf">Taille</h4>
               <p class="yymkp c4t4j">${escapeHtml(inferItemSize(item))}</p>
             </div>
 
             <div>
-              <h4 class="p3x4c m859b f1ztf">Price</h4>
+              <h4 class="p3x4c m859b f1ztf">Prix</h4>
               <p class="yymkp c4t4j">${escapeHtml(formatMoney(getOrderItemUnitPrice(item)))}</p>
             </div>
           </div>
@@ -306,12 +323,12 @@ function buildItemMarkup(item, order, productMap) {
         <div class="uj5nx rogrs">
           <div class="tex4h hfud4 f82od q3gap">
             <div>
-              <h4 class="p3x4c m859b f1ztf">Quantity</h4>
+              <h4 class="p3x4c m859b f1ztf">Quantite</h4>
               <p class="yymkp c4t4j">${escapeHtml(String(quantity))}</p>
             </div>
 
             <div>
-              <h4 class="p3x4c m859b f1ztf">Expected delivery date</h4>
+              <h4 class="p3x4c m859b f1ztf">Date de livraison prevue</h4>
               <p class="yymkp c4t4j">${escapeHtml(formatDateTime(deliveryDate.toISOString()))}</p>
             </div>
           </div>
@@ -324,18 +341,18 @@ function buildItemMarkup(item, order, productMap) {
 function buildTimelineMarkup(order, orderLabel) {
   const placedAt = formatDateTimeLabel(order?.created_at);
   const updatedAt = formatDateTimeLabel(order?.updated_at || order?.created_at);
-  const paymentLabel = titleCase(
+  const paymentLabel = translateStatusLabel(
     order?.payment_status ||
       order?.paymentStatus ||
       order?.payment?.status ||
       "pending",
   );
-  const fulfillmentLabel = titleCase(order?.status || "pending");
+  const fulfillmentLabel = translateStatusLabel(order?.status || "pending");
 
   const events = [
-    { title: `${orderLabel} was placed`, time: placedAt },
-    { title: `Payment status: ${paymentLabel}`, time: updatedAt },
-    { title: `Fulfillment status: ${fulfillmentLabel}`, time: updatedAt },
+    { title: `${orderLabel} a ete passee`, time: placedAt },
+    { title: `Statut du paiement: ${paymentLabel}`, time: updatedAt },
+    { title: `Statut de traitement: ${fulfillmentLabel}`, time: updatedAt },
   ];
 
   return events
@@ -484,32 +501,32 @@ function bindStatusControls(order) {
   if (!isSupabaseOrderId(order?.id)) {
     select.disabled = false;
     saveButton.disabled = false;
-    setStatusFeedback("This order will be saved to shared order history for the storefront view.");
+    setStatusFeedback("Cette commande sera enregistree dans l'historique partage pour la boutique.");
   } else {
     select.disabled = false;
     saveButton.disabled = false;
-    setStatusFeedback("Sync order progress to the storefront tracker via Supabase.");
+    setStatusFeedback("Synchronisez l'avancement de la commande avec le suivi boutique via Supabase.");
   }
   saveButton.onclick = async () => {
     const nextStatus = normalizeTrackerStatus(select.value);
     const currentStatus = normalizeTrackerStatus(order.status);
 
     if (!TRACKER_STATUSES.includes(nextStatus)) {
-      setStatusFeedback("Choose a valid status before saving.", "error");
+      setStatusFeedback("Choisissez un statut valide avant d'enregistrer.", "error");
       syncSelect();
       return;
     }
 
     if (nextStatus === currentStatus) {
-      setStatusFeedback("This order is already using that storefront status.", "muted");
+      setStatusFeedback("Cette commande utilise deja ce statut boutique.", "muted");
       return;
     }
 
     const originalLabel = saveButton.textContent;
     saveButton.disabled = true;
     select.disabled = true;
-    saveButton.textContent = "Saving...";
-    setStatusFeedback("Saving order progress to Supabase...");
+    saveButton.textContent = "Enregistrement...";
+    setStatusFeedback("Enregistrement de l'avancement dans Supabase...");
 
     try {
       let updatedOrder;
@@ -528,15 +545,15 @@ function bindStatusControls(order) {
       syncSharedOrderHistory(order);
       setStatusFeedback(
         isSupabaseOrderId(order.id)
-          ? "Order progress saved. The storefront tracker will read it from shared history and Supabase."
-          : "Order progress saved to shared order history for the storefront.",
+          ? "Avancement enregistre. Le suivi boutique le lira depuis l'historique partage et Supabase."
+          : "Avancement enregistre dans l'historique partage pour la boutique.",
         "success",
       );
     } catch (error) {
       console.error("Failed to update order status", error);
       syncSelect();
       setStatusFeedback(
-        error?.message || "Unable to save order progress right now.",
+        error?.message || "Impossible d'enregistrer l'avancement pour le moment.",
         "error",
       );
     } finally {
@@ -561,9 +578,9 @@ function readStorefrontLatestOrder(orderId) {
 }
 
 function renderNotFound(message) {
-  setText("admin-order-details-title", "Order not found");
+  setText("admin-order-details-title", "Commande introuvable");
   setText("admin-order-details-meta", message);
-  setText("admin-order-details-position", "No matching order");
+  setText("admin-order-details-position", "Aucune commande correspondante");
   setHtml(
     "admin-order-details-items",
     `<div class="p0vwr fkl1d r4caq mjfwa azhag phna0 a70al"><p class="yymkp c4t4j">${escapeHtml(message)}</p></div>`,
@@ -575,7 +592,7 @@ async function initOrderDetailsPage() {
   const orderId = params.get("order");
 
   if (!orderId) {
-    renderNotFound("No order id was provided.");
+    renderNotFound("Aucun identifiant de commande n'a ete fourni.");
     return;
   }
 
@@ -623,11 +640,11 @@ async function initOrderDetailsPage() {
       [customer?.first_name, customer?.last_name].filter(Boolean).join(" ").trim() ||
       shippingAddress.first_name ||
       order.customerName ||
-      "Guest customer";
+      "Client invite";
     const customerEmail =
-      customer?.email || shippingAddress.email || order.email || "Not provided";
+      customer?.email || shippingAddress.email || order.email || "Non renseigne";
     const customerPhone =
-      customer?.phone || shippingAddress.phone || "Not provided";
+      customer?.phone || shippingAddress.phone || "Non renseigne";
     const matchingOrders = allOrders.filter((entry) => {
       if (order.user_id && entry.user_id === order.user_id) return true;
       if (order.customer_id && entry.customer_id === order.customer_id) return true;
@@ -636,16 +653,16 @@ async function initOrderDetailsPage() {
     const orderPosition = allOrders.findIndex((entry) => entry.id === order.id);
     const deleteButton = document.getElementById("admin-order-details-delete");
 
-    setText("admin-order-details-title", `Order ${orderLabel}`);
-    setText("admin-order-details-meta", `Order placed: ${formatDateTimeLabel(order.created_at)}`);
+    setText("admin-order-details-title", `Commande ${orderLabel}`);
+    setText("admin-order-details-meta", `Commande passee: ${formatDateTimeLabel(order.created_at)}`);
     bindStatusControls(order);
     setHtml(
       "admin-order-details-items",
       items.length
         ? items.map((item) => buildItemMarkup(item, order, productMap)).join("")
-        : `<div class="p0vwr fkl1d r4caq mjfwa azhag phna0 a70al"><p class="yymkp c4t4j">No order items were found for this order.</p></div>`,
+        : `<div class="p0vwr fkl1d r4caq mjfwa azhag phna0 a70al"><p class="yymkp c4t4j">Aucun article trouve pour cette commande.</p></div>`,
     );
-    setText("admin-order-details-promo-code", order.promo_code || "No promo code");
+    setText("admin-order-details-promo-code", order.promo_code || "Aucun code promo");
     setText("admin-order-details-subtotal", formatMoney(order.subtotal ?? getOrderTotal(order)));
     setText("admin-order-details-shipping", formatMoney(order.shipping_amount ?? 0));
     setText("admin-order-details-tax", formatMoney(order.tax_amount ?? 0));
@@ -653,13 +670,13 @@ async function initOrderDetailsPage() {
     setText(
       "admin-order-details-position",
       orderPosition >= 0
-        ? `Order ${orderPosition + 1} of ${allOrders.length}`
-        : "Order details",
+        ? `Commande ${orderPosition + 1} sur ${allOrders.length}`
+        : "Details de la commande",
     );
     setText("admin-order-details-customer-name", customerName);
     setText(
       "admin-order-details-customer-orders-count",
-      `${matchingOrders.length || 1} orders`,
+      `${matchingOrders.length || 1} commande(s)`,
     );
     setText("admin-order-details-customer-email", customerEmail);
     setText("admin-order-details-customer-phone", customerPhone);
@@ -669,11 +686,11 @@ async function initOrderDetailsPage() {
 
     if (deleteButton) {
       deleteButton.onclick = async () => {
-        const shouldDelete = window.confirm(`Delete order ${orderLabel}?`);
+        const shouldDelete = window.confirm(`Supprimer la commande ${orderLabel} ?`);
         if (!shouldDelete) return;
 
         const originalText = deleteButton.textContent;
-        deleteButton.textContent = "Deleting...";
+        deleteButton.textContent = "Suppression...";
         deleteButton.disabled = true;
 
         try {
@@ -681,7 +698,7 @@ async function initOrderDetailsPage() {
           window.location.href = "./orders.html";
         } catch (deleteError) {
           console.error("Failed to delete order", deleteError);
-          window.alert("Unable to delete this order right now.");
+          window.alert("Impossible de supprimer cette commande pour le moment.");
           deleteButton.textContent = originalText;
           deleteButton.disabled = false;
         }
@@ -689,7 +706,7 @@ async function initOrderDetailsPage() {
     }
   } catch (error) {
     console.error("Failed to load order details", error);
-    renderNotFound("Unable to load this order right now.");
+    renderNotFound("Impossible de charger cette commande pour le moment.");
   }
 }
 

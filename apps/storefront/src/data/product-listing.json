@@ -4,7 +4,7 @@
   "sortOptions": ["Featured", "Price: Low to High", "Price: High to Low", "Newest", "Best Selling"],
   "defaultSort": "Featured",
   "banner": {
-    "text": "Free shipping on orders over $50"
+    "text": "Free shipping on orders over 50 000 FCFA"
   },
   "subCategories": [
     { "label": "T-Shirts", "count": 12, "image": "/images/cat-tshirts.jpg" },

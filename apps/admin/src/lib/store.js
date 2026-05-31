@@ -32,7 +32,7 @@ export function parsePrice(value) {
 }
 
 export function formatPrice(value) {
-  return "$" + Number(value || 0).toFixed(2).replace(/\.00$/, "");
+  return `${Number(value || 0).toLocaleString("fr-FR")} FCFA`;
 }
 
 export function normalizeCartItem(item, index = 0) {
@@ -338,7 +338,7 @@ export function updateCartSummaryUI(root = document) {
     }
 
     if (/Shipping/i.test(labelText) || /Estimated Tax/i.test(labelText) || /^Tax$/i.test(labelText) || /Promo code/i.test(labelText) || /^Promo$/i.test(labelText) || /Sale/i.test(labelText) || /Discount/i.test(labelText)) {
-      valueNode.textContent = "$0";
+      valueNode.textContent = "0 FCFA";
     }
   });
 

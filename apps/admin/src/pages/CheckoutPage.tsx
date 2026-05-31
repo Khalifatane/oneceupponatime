@@ -1,2 +1,2 @@
 import { PlaceholderPage } from "./_helpers";
-export function CheckoutPage() { return <PlaceholderPage title="Checkout" description="Checkout route scaffold for the SPA runtime." />; }
+export function CheckoutPage() { return <PlaceholderPage title="Paiement" description="Base de route paiement pour le runtime SPA." />; }

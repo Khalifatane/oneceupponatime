@@ -1,2 +1,2 @@
 import { PlaceholderPage } from "./_helpers";
-export function OrderDetailsPage() { return <PlaceholderPage title="Order Details" description="Order detail route scaffold for the SPA runtime." />; }
+export function OrderDetailsPage() { return <PlaceholderPage title="Details de commande" description="Base de detail de commande pour le runtime SPA." />; }

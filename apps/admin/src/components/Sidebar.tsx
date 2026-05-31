@@ -7,10 +7,10 @@ export function Sidebar() {
       <nav>
         <NavLink className="nav-link" to="/">Overview</NavLink>
         <NavLink className="nav-link" to="/product-listing">Product Listing</NavLink>
-        <NavLink className="nav-link" to="/product-detail">Product Detail</NavLink>
-        <NavLink className="nav-link" to="/cart">Cart</NavLink>
-        <NavLink className="nav-link" to="/checkout">Checkout</NavLink>
-        <NavLink className="nav-link" to="/my-orders">My Orders</NavLink>
+        <NavLink className="nav-link" to="/product-detail">Detail produit</NavLink>
+        <NavLink className="nav-link" to="/cart">Panier</NavLink>
+        <NavLink className="nav-link" to="/checkout">Paiement</NavLink>
+        <NavLink className="nav-link" to="/my-orders">Mes commandes</NavLink>
       </nav>
     </aside>
   );

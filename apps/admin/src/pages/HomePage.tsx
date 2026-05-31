@@ -9,21 +9,21 @@ export function HomePage() {
 
   return (
     <PlaceholderPage
-      title="Dashboard Home"
-      description="Typed SPA overview backed by the shared service layer."
+      title="Accueil du tableau de bord"
+      description="Vue SPA typee alimentee par la couche de services partagee."
     >
       <div className="page-grid">
         <article className="stat-card">
-          <div className="muted">Revenue</div>
-          <strong>{loading ? "Loading..." : formatMoney(data?.metrics.revenue ?? 0)}</strong>
+          <div className="muted">Revenu</div>
+          <strong>{loading ? "Chargement..." : formatMoney(data?.metrics.revenue ?? 0)}</strong>
         </article>
         <article className="stat-card">
-          <div className="muted">Orders</div>
-          <strong>{loading ? "Loading..." : data?.metrics.orders ?? 0}</strong>
+          <div className="muted">Commandes</div>
+          <strong>{loading ? "Chargement..." : data?.metrics.orders ?? 0}</strong>
         </article>
         <article className="stat-card">
-          <div className="muted">Customers</div>
-          <strong>{loading ? "Loading..." : data?.metrics.customers ?? 0}</strong>
+          <div className="muted">Clients</div>
+          <strong>{loading ? "Chargement..." : data?.metrics.customers ?? 0}</strong>
         </article>
       </div>
       <IntegrationExample />

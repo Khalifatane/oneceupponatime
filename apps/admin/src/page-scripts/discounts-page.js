@@ -27,7 +27,7 @@ function getDiscountStatusMeta(rawStatus) {
 
   if (status === "active") {
     return {
-      label: "Active",
+      label: "Actif",
       className:
         "k85d4 o8oua inline-flex items-center i220p m859b at2zb qn8tw k73c1 nj29a dark:bg-green-500/10 dark:text-green-500",
       icon: '<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path>',
@@ -36,7 +36,7 @@ function getDiscountStatusMeta(rawStatus) {
 
   if (status === "expired") {
     return {
-      label: "Expired",
+      label: "Expire",
       className:
         "k85d4 o8oua inline-flex items-center i220p m859b at2zb olwac oz3g9 nj29a dark:bg-red-500/10 dark:text-red-500",
       icon: '<circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path>',
@@ -44,7 +44,7 @@ function getDiscountStatusMeta(rawStatus) {
   }
 
   return {
-    label: "Draft",
+    label: "Brouillon",
     className:
       "k85d4 o8oua inline-flex items-center i220p m859b at2zb nck10 h3ns9 nj29a",
     icon: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path>',
@@ -59,7 +59,7 @@ function formatDiscountValue(discount) {
 
   if (type.includes("percent")) return `${safeValue}%`;
   if (safeValue === 0 && discount.value == null && discount.amount == null) return "N/A";
-  return `$${safeValue}`;
+  return `${safeValue} FCFA`;
 }
 
 function formatDateLabel(date) {
@@ -253,15 +253,15 @@ function setupDiscountForm(render) {
 
     delete startButton.dataset.selectedValue;
     delete endButton.dataset.selectedValue;
-    updateDateButtonLabel(startButton, startButton.dataset.defaultLabel || "Select start date");
-    updateDateButtonLabel(endButton, endButton.dataset.defaultLabel || "Select end date");
+    updateDateButtonLabel(startButton, startButton.dataset.defaultLabel || "Choisir la date de debut");
+    updateDateButtonLabel(endButton, endButton.dataset.defaultLabel || "Choisir la date de fin");
 
     setFeedback(feedbackNode, "");
     window.HSStaticMethods?.autoInit?.();
   }
 
   function getDiscountType() {
-    return typeSelect.value === "$" ? "fixed" : "percent";
+    return typeSelect.value === "FCFA" ? "fixed" : "percent";
   }
 
   function readFormPayload(status) {
@@ -272,18 +272,18 @@ function setupDiscountForm(render) {
     const startsAt = normalizeDateValue(startButton.dataset.selectedValue);
     const endsAt = normalizeDateValue(endButton.dataset.selectedValue);
 
-    if (!name) throw new Error("Discount name is required.");
-    if (!code) throw new Error("Discount code is required.");
+    if (!name) throw new Error("Le nom de la remise est obligatoire.");
+    if (!code) throw new Error("Le code de la remise est obligatoire.");
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new Error("Discount amount must be greater than 0.");
+      throw new Error("Le montant de la remise doit etre superieur a 0.");
     }
     if (startsAt && endsAt && new Date(startsAt) > new Date(endsAt)) {
-      throw new Error("End date must be on or after the start date.");
+      throw new Error("La date de fin doit etre egale ou posterieure a la date de debut.");
     }
     if (usageLimit) {
       const parsedLimit = Number.parseInt(usageLimit, 10);
       if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
-        throw new Error("Usage limit must be a positive whole number.");
+        throw new Error("La limite d'utilisation doit etre un nombre entier positif.");
       }
     }
 
@@ -305,8 +305,8 @@ function setupDiscountForm(render) {
       setFeedback(feedbackNode, "");
       saveDraftButton.disabled = true;
       publishButton.disabled = true;
-      setButtonBusy(saveDraftButton, status === "draft", "Save as draft", "Saving...");
-      setButtonBusy(publishButton, status === "active", "Publish discount", "Publishing...");
+      setButtonBusy(saveDraftButton, status === "draft", "Enregistrer comme brouillon", "Enregistrement...");
+      setButtonBusy(publishButton, status === "active", "Publier la remise", "Publication...");
 
       const payload = readFormPayload(status);
       const createdDiscount = await createDiscount(payload);
@@ -318,8 +318,8 @@ function setupDiscountForm(render) {
       setFeedback(
         feedbackNode,
         status === "active"
-          ? "Discount published successfully."
-          : "Discount saved as draft.",
+          ? "Remise publiee avec succes."
+          : "Remise enregistree comme brouillon.",
         "success",
       );
 
@@ -330,13 +330,13 @@ function setupDiscountForm(render) {
       console.error("Failed to create discount", error);
       setFeedback(
         feedbackNode,
-        error?.message || "Unable to create the discount right now.",
+        error?.message || "Impossible de creer la remise pour le moment.",
       );
     } finally {
       saveDraftButton.disabled = false;
       publishButton.disabled = false;
-      setButtonBusy(saveDraftButton, false, "Save as draft", "Saving...");
-      setButtonBusy(publishButton, false, "Publish discount", "Publishing...");
+      setButtonBusy(saveDraftButton, false, "Enregistrer comme brouillon", "Enregistrement...");
+      setButtonBusy(publishButton, false, "Publier la remise", "Publication...");
     }
   }
 
@@ -372,7 +372,7 @@ function buildEmptyRow(message, colspan = 8) {
 function buildDiscountRow(discount) {
   const status = getDiscountStatusMeta(discount.status);
   const codeId = `discount-code-${String(discount.id ?? discount.code ?? Math.random()).replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  const scope = discount.scope || discount.applies_to || "All products";
+  const scope = discount.scope || discount.applies_to || "Tous les produits";
   const usageCount = discount.usage_count ?? discount.uses ?? 0;
   const discountId = String(discount.id ?? discount.code ?? "");
 
@@ -382,13 +382,13 @@ function buildDiscountRow(discount) {
         <input type="checkbox" class="y6rh0 x215h robkw fsj2t ftf66 cirj5 s7mjk jw8en qgcqn checked:bg-primary-checked checked:border-primary-checked disabled:opacity-50 disabled:pointer-events-none">
       </td>
       <td class="gmilb offh6 cti9j dg39k">
-        <span class="yymkp at2zb c4t4j">${escapeHtml(discount.name || discount.title || "Untitled discount")}</span>
+        <span class="yymkp at2zb c4t4j">${escapeHtml(discount.name || discount.title || "Remise sans titre")}</span>
       </td>
       <td class="gmilb offh6 cti9j dg39k">
         <span class="js-clipboard [--is-toggle-tooltip:false] hs-tooltip ltybu nck10 h3ns9 m859b y9dku cursor-pointer" data-clipboard-target="#${codeId}" data-clipboard-action="copy" data-clipboard-success-text="Copied">
           <span id="${codeId}" class="knnc2">${escapeHtml(discount.code || "no-code")}</span>
           <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 xsbp2 hidden l2ewm nnhrf dg39k o8oua n7c39 mak94 sgbfs m859b at2zb hq333 edpyz cirj5" role="tooltip">
-            <span class="js-clipboard-success-text">Copy</span>
+          <span class="js-clipboard-success-text">Copier</span>
           </span>
         </span>
       </td>
@@ -421,10 +421,10 @@ function buildDiscountRow(discount) {
           <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 mvv53 transition-[opacity,margin] duration opacity-0 hidden nnhrf khfq6 mak94 ocfsa ictpa p6d5j" role="menu" aria-orientation="vertical" tabindex="-1">
             <div class="i0yn8">
               <button type="button" class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu">
-                Edit
+                Modifier
               </button>
               <button type="button" class="w-full flex items-center h7z6o k85d4 o8oua edpyz text-[13px] j6b7h ibg9k disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden mhymu" data-discount-delete="${escapeHtml(discountId)}">
-                Delete
+                Supprimer
               </button>
             </div>
           </div>
@@ -496,8 +496,8 @@ async function initDiscountsPage() {
       if (!pageDiscounts.length) {
         tableBody.innerHTML = buildEmptyRow(
           query
-            ? "No discounts match your current search."
-            : "No discounts found yet.",
+            ? "Aucune remise ne correspond a votre recherche."
+            : "Aucune remise trouvee pour le moment.",
         );
       } else {
         tableBody.innerHTML = pageDiscounts.map(buildDiscountRow).join("");
@@ -507,7 +507,7 @@ async function initDiscountsPage() {
     } catch (error) {
       console.error("Failed to render discounts page", error);
       tableBody.innerHTML = buildEmptyRow(
-        error?.message || "Unable to load discounts right now.",
+        error?.message || "Impossible de charger les remises pour le moment.",
       );
       count.textContent = "0";
     } finally {
@@ -545,11 +545,11 @@ async function initDiscountsPage() {
     const discountId = deleteButton.getAttribute("data-discount-delete");
     if (!discountId) return;
 
-    const shouldDelete = window.confirm(`Delete discount ${discountId}?`);
+    const shouldDelete = window.confirm(`Supprimer la remise ${discountId} ?`);
     if (!shouldDelete) return;
 
     const originalText = deleteButton.textContent;
-    deleteButton.textContent = "Deleting...";
+    deleteButton.textContent = "Suppression...";
     deleteButton.disabled = true;
 
     try {
@@ -557,7 +557,7 @@ async function initDiscountsPage() {
       await render();
     } catch (error) {
       console.error("Failed to delete discount", error);
-      window.alert("Unable to delete this discount right now.");
+      window.alert("Impossible de supprimer cette remise pour le moment.");
       deleteButton.textContent = originalText;
       deleteButton.disabled = false;
     }

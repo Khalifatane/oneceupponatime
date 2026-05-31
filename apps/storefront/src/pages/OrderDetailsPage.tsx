@@ -28,7 +28,7 @@ export default function OrderDetailsPage() {
                 </span>
               </div>
             </div>
-            <span className="text-lg font-medium">{order.currency === 'USD' && '$'}{order.total}</span>
+            <span className="text-lg font-medium">{order.total} {order.currency}</span>
           </div>
 
           {/* Shipping Address */}
@@ -63,11 +63,11 @@ export default function OrderDetailsPage() {
           <div className="border rounded-lg p-6 mb-6">
             <h2 className="text-sm font-medium mb-3">Order costs</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>${order.costs.subtotal}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>{order.costs.subtotal} {order.currency}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="text-green-600">{order.costs.shipping}</span></div>
               <div className="flex justify-between font-medium pt-2 border-t">
                 <span>Total</span>
-                <span>${order.costs.total}</span>
+                <span>{order.costs.total} {order.currency}</span>
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function OrderDetailsPage() {
                   <h3 className="font-medium text-sm">{item.name}</h3>
                   <p className="text-xs text-gray-500">{item.color} / {item.size}</p>
                   <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
-                  <p className="text-sm font-medium mt-1">${item.price}</p>
+                  <p className="text-sm font-medium mt-1">{item.price} {order.currency}</p>
                   <div className="flex items-center gap-4 mt-2 text-xs">
                     {item.actions.buyAgainButton && (
                       <button className="text-gray-600 hover:text-black">Buy again</button>

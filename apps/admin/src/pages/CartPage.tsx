@@ -1,2 +1,2 @@
 import { PlaceholderPage } from "./_helpers";
-export function CartPage() { return <PlaceholderPage title="Cart" description="Cart route scaffold for the SPA runtime." />; }
+export function CartPage() { return <PlaceholderPage title="Panier" description="Base de route panier pour le runtime SPA." />; }

@@ -50,7 +50,7 @@
       ]
     }
   ],
-  "payButton": "Pay $229.00",
+  "payButton": "Pay 229 FCFA",
   "orderSummary": {
     "editCartLink": "/cart",
     "promoCode": {
@@ -62,7 +62,7 @@
     "estimatedTax": "Calculated at checkout",
     "saleDiscount": null,
     "total": 229,
-    "currency": "USD",
+    "currency": "XOF",
     "items": [
       { "name": "Nike Air Force 1", "color": "White", "size": "M", "quantity": 1, "price": 149 },
       { "name": "Camo Blend Jacket", "color": "Camo", "size": "M", "quantity": 1, "price": 40 },

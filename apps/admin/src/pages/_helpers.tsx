@@ -11,7 +11,7 @@ export function PlaceholderPage({
 }) {
   return (
     <PageShell title={title} description={description}>
-      {children ?? <p className="muted">This route is scaffolded and ready for feature work.</p>}
+      {children ?? <p className="muted">Cette route est preparee et prete pour les prochaines fonctionnalites.</p>}
     </PageShell>
   );
 }

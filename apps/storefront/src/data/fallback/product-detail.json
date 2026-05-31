@@ -34,7 +34,7 @@
       { "url": "/images/product-4.jpg" }
     ],
     "features": [
-      { "title": "Free shipping", "description": "On orders over $50" },
+      { "title": "Free shipping", "description": "On orders over 50 000 FCFA" },
       { "title": "Easy returns", "description": "30-day return policy" },
       { "title": "Secure payment", "description": "100% secure checkout" }
     ],

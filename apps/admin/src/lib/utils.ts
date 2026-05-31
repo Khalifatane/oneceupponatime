@@ -1,5 +1,5 @@
-export function formatMoney(value: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", {
+export function formatMoney(value: number, currency = "XOF") {
+  return new Intl.NumberFormat("fr-SN", {
     style: "currency",
     currency,
     maximumFractionDigits: 2,

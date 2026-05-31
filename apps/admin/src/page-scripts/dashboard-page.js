@@ -14,6 +14,8 @@ const DASHBOARD_PERIOD_DAYS = 30;
 const POSITIVE_TREND_CLASS = "m5geq";
 const NEGATIVE_TREND_CLASS = "pnjtm";
 const NEUTRAL_TREND_CLASS = "nck10";
+const SUMMARY_ORDER_GOAL = 200000;
+const SUMMARY_SALES_GOAL = 2000000;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -26,9 +28,9 @@ function escapeHtml(value) {
 
 function formatMoney(value) {
   const amount = Number(value ?? 0);
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("fr-SN", {
     style: "currency",
-    currency: "USD",
+    currency: "XOF",
     maximumFractionDigits: 2,
   }).format(Number.isFinite(amount) ? amount : 0);
 }
@@ -316,7 +318,11 @@ function getChangeMarkup(product) {
     <span class="yymkp mnod2">
       ${sellThrough}%
       <span class="inline-block ${trendClass}">
-        ${escapeHtml(stockState.label)}
+        ${escapeHtml({
+          out_of_stock: "Rupture de stock",
+          low_stock: "Stock faible",
+          in_stock: "En stock",
+        }[stockState.key] || stockState.label)}
         ${trendIcon}
       </span>
     </span>
@@ -326,7 +332,7 @@ function getChangeMarkup(product) {
 function hydrateDashboardRow(row, product) {
   const sold = Math.max(0, Number(product?.salesCount ?? 0) || 0);
   const value = sold * Math.max(0, Number(product?.price ?? 0) || 0);
-  const productName = String(product?.name || "Untitled product").trim();
+  const productName = String(product?.name || "Produit sans titre").trim();
   const detailsHref = `./product-details.html?product=${encodeURIComponent(
     product?.slug || product?.id || "",
   )}`;
@@ -341,10 +347,10 @@ function hydrateDashboardRow(row, product) {
   if (image) {
     if (product?.imageUrl) {
       image.src = product.imageUrl;
-      image.alt = "Product Image";
+      image.alt = "Image du produit";
     } else {
       image.removeAttribute("src");
-      image.alt = "Product Image";
+      image.alt = "Image du produit";
     }
   }
 
@@ -528,7 +534,7 @@ async function loadDashboardTopProducts(data) {
         tbody.innerHTML = `
           <tr>
             <td colspan="6" class="cti9j edpyz yymkp f1ztf c4t4j">
-              No live products are available for this dashboard yet.
+              Aucun produit live n'est disponible pour ce tableau de bord pour le moment.
             </td>
           </tr>
         `;
@@ -751,6 +757,89 @@ function calculateOverviewMetrics(data) {
   };
 }
 
+function getSummaryProgress(value, goal) {
+  const safeValue = Number(value ?? 0) || 0;
+  const safeGoal = Number(goal ?? 1) || 1;
+  return Math.max(0, Math.min(100, Math.round((safeValue / safeGoal) * 100)));
+}
+
+function hydrateDashboardSummaryTabs(metrics) {
+  const orderTotal = document.getElementById("dashboard-orders-total");
+  const orderProgress = document.getElementById("dashboard-orders-progress");
+  const orderProgressThumb = document.getElementById("dashboard-orders-progress-thumb");
+  const orderBar = document.querySelector('#hs-pro-tabs-dtsch-orders [role="progressbar"]');
+  const orderMin = document.getElementById("dashboard-orders-min");
+  const orderMax = document.getElementById("dashboard-orders-max");
+  const orderDescription = document.getElementById("dashboard-orders-description");
+
+  const salesTotal = document.getElementById("dashboard-sales-total");
+  const salesProgress = document.getElementById("dashboard-sales-progress");
+  const salesProgressThumb = document.getElementById("dashboard-sales-progress-thumb");
+  const salesBar = document.querySelector('#hs-pro-tabs-dtsch-sales [role="progressbar"]');
+  const salesMin = document.getElementById("dashboard-sales-min");
+  const salesMax = document.getElementById("dashboard-sales-max");
+  const salesDescription = document.getElementById("dashboard-sales-description");
+
+  const orderProgressValue = getSummaryProgress(metrics.orders.total, SUMMARY_ORDER_GOAL);
+  const salesProgressValue = getSummaryProgress(metrics.orders.revenue, SUMMARY_SALES_GOAL);
+
+  if (orderTotal) {
+    orderTotal.textContent = formatNumber(metrics.orders.total);
+  }
+
+  if (orderProgress) {
+    orderProgress.style.width = `${orderProgressValue}%`;
+  }
+
+  if (orderBar) {
+    orderBar.setAttribute("aria-valuenow", String(orderProgressValue));
+  }
+
+  if (orderProgressThumb) {
+    orderProgressThumb.style.left = `${Math.min(100, Math.max(0, orderProgressValue))}%`;
+  }
+
+  if (orderMin) {
+    orderMin.textContent = "0";
+  }
+
+  if (orderMax) {
+    orderMax.textContent = formatNumber(SUMMARY_ORDER_GOAL);
+  }
+
+  if (orderDescription) {
+    orderDescription.textContent = "Répartition par projet du total des commandes, avec des informations détaillées.";
+  }
+
+  if (salesTotal) {
+    salesTotal.textContent = formatMoney(metrics.orders.revenue);
+  }
+
+  if (salesProgress) {
+    salesProgress.style.width = `${salesProgressValue}%`;
+  }
+
+  if (salesBar) {
+    salesBar.setAttribute("aria-valuenow", String(salesProgressValue));
+  }
+
+  if (salesProgressThumb) {
+    salesProgressThumb.style.left = `${Math.min(100, Math.max(0, salesProgressValue))}%`;
+  }
+
+  if (salesMin) {
+    salesMin.textContent = "0 FCFA";
+  }
+
+  if (salesMax) {
+    salesMax.textContent = formatMoney(SUMMARY_SALES_GOAL);
+  }
+
+  if (salesDescription) {
+    salesDescription.textContent = "Répartition par projet du chiffre d'affaires total, avec des informations détaillées.";
+  }
+}
+
 function hydrateDashboardSummary(data) {
   const metrics = calculateOverviewMetrics(data);
   const topCards = getTopMetricCards();
@@ -769,6 +858,8 @@ function hydrateDashboardSummary(data) {
     trend: getTrend(metrics.discounts.currentTotal, metrics.discounts.previousTotal),
   });
 
+  hydrateDashboardSummaryTabs(metrics);
+
   const salesSeries = buildSeriesFromCollection(data.orders, data.range, (order) =>
     Number(order?.total_amount ?? order?.total ?? 0) || 0,
   );
@@ -780,7 +871,7 @@ function hydrateDashboardSummary(data) {
   });
   renderLineChart(
     "#hs-total-sales-line-chart",
-    "Sales",
+    "Ventes",
     salesSeries.categories,
     salesSeries.currentSeries,
     salesSeries.previousSeries,
@@ -796,7 +887,7 @@ function hydrateDashboardSummary(data) {
   });
   renderLineChart(
     "#hs-total-visitors-line-chart",
-    "Reviews",
+    "Avis",
     reviewSeries.categories,
     reviewSeries.currentSeries,
     reviewSeries.previousSeries,
@@ -811,7 +902,7 @@ function hydrateDashboardSummary(data) {
   });
   renderLineChart(
     "#hs-total-orders-line-chart",
-    "Orders",
+    "Commandes",
     orderSeries.categories,
     orderSeries.currentSeries,
     orderSeries.previousSeries,
@@ -821,12 +912,12 @@ function hydrateDashboardSummary(data) {
   updateChartCardHeader("#hs-total-refunded-line-chart", {
     title: "Promotions actives",
     value: formatNumber(metrics.discounts.active),
-    subtext: `${formatNumber(metrics.discounts.total)} codes enregistrés`,
+    subtext: `${formatNumber(metrics.discounts.total)} codes enregistres`,
     trend: getTrend(metrics.discounts.currentTotal, metrics.discounts.previousTotal),
   });
   renderLineChart(
     "#hs-total-refunded-line-chart",
-    "Discounts",
+    "Remises",
     discountSeries.categories,
     discountSeries.currentSeries,
     discountSeries.previousSeries,
@@ -850,12 +941,12 @@ function hydrateDashboardSummary(data) {
 
   const reviewsLink = Array.from(document.querySelectorAll('a[href="reviews.html"]')).find(Boolean);
   if (reviewsLink) {
-    reviewsLink.setAttribute("title", `${formatNumber(metrics.reviews.published)} published reviews`);
+    reviewsLink.setAttribute("title", `${formatNumber(metrics.reviews.published)} avis publies`);
   }
 
   const discountsLink = Array.from(document.querySelectorAll('a[href="discounts.html"]')).find(Boolean);
   if (discountsLink) {
-    discountsLink.setAttribute("title", `${formatNumber(metrics.discounts.active)} active discounts`);
+    discountsLink.setAttribute("title", `${formatNumber(metrics.discounts.active)} remises actives`);
   }
 
   const ordersSectionTitle = Array.from(document.querySelectorAll("h2")).find(

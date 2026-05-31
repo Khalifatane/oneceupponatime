@@ -1,174 +1,109 @@
-# Supabase Overview
+# Supabase Credentials Guide
 
-## Purpose
-This document explains how Supabase is integrated into the storefront application. Supabase is used for authentication, user profile management, order storage, and cart persistence.
+This project can point to another Supabase project by changing the environment variables. Supabase is used for auth, user sessions, profiles, carts, orders, storage, and admin data reads/writes.
 
-## Integration Status
-⚠️ **Important**: The storefront Supabase integration has identified inconsistencies with the admin dashboard. See `admin/ADMIN_STORE_INTEGRATION.md` for details on required changes.
+## What Supabase Does Here
 
-### Key Issues to Address
-- **User ID Field Inconsistency**: Store uses `user_id`, admin uses `customer_id`
-- **Missing Admin Functions**: Store lacks bulk queries and order status updates needed for admin dashboard
-- **Missing Store Functions**: Store needs `customers` table support and enhanced order management
+Supabase is read through both app-local files and the shared package:
 
-## Key Supabase Files
+- `apps/storefront/src/lib/supabase.ts`
+- `packages/supabase/src/client.ts`
+- `apps/admin/src/lib/supabase.ts`
+- `apps/storefront/src/services/supabase-service.ts`
+- `apps/admin/src/services/supabase-service.ts`
 
-- `src/lib/supabase.ts`
-  - Initializes the Supabase client.
-  - Reads environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-  - Enables session persistence, auto-refresh, and URL session detection.
+The admin app imports the shared `@siggistore/supabase` client. The storefront has a local client and also uses shared services in some places. Use the same root `.env.local` values for the whole repo.
 
-- `src/services/supabase-service.ts`
-  - Provides `supabaseAuthService`, `supabaseProfileService`, `supabaseOrderService`, and cart-related helpers.
-  - Handles sign-up, sign-in, sign-out, profile reads, order queries, and storage operations.
+## Required Variables
 
-- `src/hooks/useSupabase.ts`
-  - Offers React hooks for auth state, profiles, orders, and cart.
-  - Implements state management, loading flags, errors, and callback logic.
+Put these in `.env.local` at the repo root:
 
-- `src/contexts/AuthContext.tsx`
-  - Wraps the application in an auth provider.
-  - Exposes `useAuth()` to resolve current user state.
-
-## Supabase Architecture Diagram
-
-```mermaid
-flowchart LR
-  A[Page Component] --> B[useSupabase hook]
-  B --> C[supabaseService]
-  C --> D[src/lib/supabase.ts]
-  D --> E[Supabase Backend]
-  B --> F[AuthContext] --> G[Global user state]
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
 
-## Auth Flow
+Optional:
 
-1. `main.tsx` renders `<AuthProvider>` around `<BrowserRouter>`.
-2. `AuthProvider` calls `useSupabaseAuth()`.
-3. `useSupabaseAuth()` fetches the current user and subscribes to auth state change events.
-4. Pages read the current user from `useAuth()`.
-5. `signIn`, `signUp`, and `signOut` call `supabaseAuthService`.
-
-## Supabase Routes and Views
-
-### Authentication pages
-
-- `/login` → `LoginPage.tsx`
-- `/create-account` → `CreateAccountPage.tsx`
-- `/forgot-password` → `ForgotPasswordPage.tsx`
-
-These pages invoke the Supabase auth hook directly for sign-in and account creation.
-
-### User profile pages
-
-- `/personal-info` → `PersonalInfoPage.tsx`
-- `/addresses` → `AddressesPage.tsx`
-- `/my-orders` → `MyOrdersPage.tsx`
-- `/order-details` → `OrderDetailsPage.tsx`
-
-These pages depend on authenticated user state and often fetch user-specific data from Supabase tables.
-
-### Checkout / order flow
-
-- `/checkout` → `CheckoutPage.tsx`
-- `/checkout-not-logged-in` → `CheckoutNotLoggedInPage.tsx`
-- `/review-and-pay` → `ReviewAndPayPage.tsx`
-- `/order-confirmation` → `OrderConfirmationPage.tsx`
-- `/order-checkup` → `OrderCheckupPage.tsx`
-
-The checkout flow uses Supabase for order creation and lookup when a user is logged in.
-
-## Service Responsibilities
-
-### `supabaseAuthService`
-- `signUp(email, password)`
-- `signIn(email, password)`
-- `signOut()`
-- `getCurrentUser()`
-- `resetPassword(email)`
-- `updatePassword(newPassword)`
-- `uploadAvatar(userId, file)`
-- `onAuthStateChange(callback)`
-
-### `supabaseProfileService`
-- `getProfile(userId)`
-- `createProfile(profile)`
-- `upsertProfile(userId, profile)`
-- `deleteProfile(userId)`
-
-### `supabaseOrderService`
-- `getOrders(userId)`
-- `getOrder(orderId)`
-- `createOrder(order)`
-
-## Required Integration Changes
-
-### Functions to Add to Store (for Admin Integration)
-The following functions need to be added to `src/services/supabase-service.ts` to support admin dashboard requirements:
-
-```typescript
-export const supabaseAdminService = {
-  // Bulk operations for admin dashboard
-  async getAllOrders(limit?: number) {
-    // Implementation needed - fetch all orders for admin dashboard
-  },
-  
-  async getAllCustomers(limit?: number) {
-    // Implementation needed - fetch all customers for admin dashboard
-  },
-  
-  async updateOrderStatus(orderId: string, status: OrderStatus) {
-    // Implementation needed - update order status from admin
-  }
-}
+```env
+VITE_SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key
 ```
 
-### Schema Alignment Needed
-- **Current**: Store uses `user_id` in orders/profiles/carts tables
-- **Admin**: Uses `customer_id` linking to customers/profiles tables
-- **Required**: Standardize on `user_id` and add `customers` table support to store
+The code also supports `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as fallbacks, but this repo should use `VITE_*` names first.
 
-### Environment Variables
-Store currently supports both patterns:
-- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (preferred)
-- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` (fallback)
+## How To Change To Another Supabase Project
 
-## Data Flow
+1. Open the new Supabase project dashboard.
+2. Go to Project Settings -> API.
+3. Copy the Project URL into `VITE_SUPABASE_URL`.
+4. Copy the anon/public key into `VITE_SUPABASE_ANON_KEY`.
+5. Only if a server/admin script needs it, copy the service role key into `VITE_SUPABASE_SERVICE_ROLE_KEY`.
+6. Restart the dev server. Vite env variables are loaded when the server starts.
+7. Test login, account creation, profile pages, cart, checkout, and admin dashboard pages.
 
-```mermaid
-graph TD
-  Page --> AuthHook[useSupabaseAuth]
-  AuthHook --> AuthService[supabaseAuthService]
-  Page --> ProfileHook[useSupabaseProfile]
-  ProfileHook --> ProfileService[supabaseProfileService]
-  Page --> OrderHook[useSupabaseOrders]
-  OrderHook --> OrderService[supabaseOrderService]
-  Page --> CartHook[useSupabaseCart]
-  CartHook --> CartService[supabaseCartService]
-  AuthService --> SupabaseClient[src/lib/supabase.ts]
-  ProfileService --> SupabaseClient
-  OrderService --> SupabaseClient
-  CartService --> SupabaseClient
+## Important Security Notes
+
+- `VITE_SUPABASE_ANON_KEY` is safe to expose in browser code when Row Level Security policies are correct.
+- The service role key bypasses RLS. Treat it as a server-only secret.
+- Do not commit `.env.local`.
+- Do not paste real credentials into docs, issues, screenshots, or frontend HTML.
+
+## Database Requirements
+
+Changing credentials points the app to a different Supabase backend, but it does not create the database schema. The new Supabase project needs the same tables, policies, storage buckets, and auth settings.
+
+Expected areas include:
+
+- Auth users and email/password settings.
+- Profiles/customers data.
+- Orders and order items.
+- Cart or cart item persistence.
+- Storage for avatars or user-uploaded files if enabled.
+- RLS policies that allow the storefront user to read/write only their own data.
+- Admin access rules for dashboard operations.
+
+If the app connects but pages are empty or actions fail, the most likely cause is missing tables, missing RLS policies, or mismatched column names.
+
+## Session Behavior
+
+The shared Supabase package uses a fixed storage key:
+
+```text
+siggistore-auth-token
 ```
 
-## Verified Supabase Structure
+That means storefront and admin can share a browser auth session when served from the same domain. After changing credentials, sign out and sign in again so the browser session belongs to the new Supabase project.
 
-- Auth is centralized in `src/contexts/AuthContext.tsx` and `src/hooks/useSupabase.ts`.
-- `src/lib/supabase.ts` is the single source of truth for the Supabase client.
-- All Supabase operations are abstracted in `src/services/supabase-service.ts`.
-- Pages do not call Supabase directly; they use hooks and service functions.
+## Common Problems
 
-## Notes on Deployment and Env Variables
+`Missing Supabase configuration`
+: `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing. Add both to `.env.local` and restart the dev server.
 
-Supabase integration requires these env variables:
-- `VITE_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+Login fails
+: Check Auth settings in Supabase, email confirmation settings, and that the URL/key pair come from the same project.
 
-`src/lib/supabase.ts` will throw if these are missing.
+Data requests return empty
+: The user may not own any rows in the new project, or RLS policies may block access.
 
-## Relationship Summary
+Data requests return permission errors
+: RLS policies are missing or too strict for the tables being used.
 
-- `Navbar.tsx` and `Sidebar.tsx` read the user state and render login/logout flows.
-- `LoginPage.tsx`, `CreateAccountPage.tsx`, and `ForgotPasswordPage.tsx` are the main auth entry points.
-- Profile, address, orders, checkout, and order detail pages all rely on Supabase-authenticated user state.
-- Supabase is the backend for user identity and transaction persistence, while Sanity is the backend for product/content data.
+Admin dashboard fails
+: The new project may not have the expected admin tables, policies, or service role setup.
+
+## Quick Verification
+
+After changing credentials:
+
+```powershell
+pnpm build:storefront
+```
+
+Then run the apps and verify:
+
+- Storefront login/create account.
+- Personal info/profile page.
+- Cart and checkout flow.
+- Order list/order detail.
+- Admin dashboard data.

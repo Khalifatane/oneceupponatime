@@ -653,7 +653,7 @@
       });
       const priceText = priceBlocks.find(function (text) {
         return /\$\d/.test(text);
-      }) || "$0";
+      }) || "0 FCFA";
       const buttons = row.querySelectorAll(".d8sjl");
       const select = row.querySelector("select");
       const image = row.querySelector("img");
@@ -1102,7 +1102,7 @@
     );
     const price = typeof (product && product.price) === "number"
       ? formatPrice(product.price)
-      : "$0";
+      : "0 FCFA";
     const originalPrice = typeof (product && product.originalPrice) === "number"
       ? formatPrice(product.originalPrice)
       : "";
@@ -1713,7 +1713,7 @@
       items: cartItems,
       subtotal: subtotal,
       total: total,
-      currency: "USD",
+      currency: "XOF",
     };
   }
 
@@ -1822,7 +1822,7 @@
       shippingMethodLabel: getShippingMethodSummary(nextDraft.shippingMethod),
       paymentMethod: paymentMethod || nextDraft.paymentMethod || "Card",
       promoCode: nextDraft.promoCode || "",
-      currency: nextDraft.currency || "USD",
+      currency: nextDraft.currency || "XOF",
       items: Array.isArray(nextDraft.items)
         ? nextDraft.items.map(function (item) {
             return {
@@ -1872,7 +1872,7 @@
       promo_discount: snapshot.promoDiscount,
       total: snapshot.total,
       total_amount: snapshot.total,
-      currency: snapshot.currency || "USD",
+      currency: snapshot.currency || "XOF",
       items: Array.isArray(snapshot.items) ? snapshot.items : [],
       shipping_address: snapshot.shippingAddress,
       billing_address: snapshot.billingAddress,

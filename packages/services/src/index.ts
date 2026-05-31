@@ -32,7 +32,7 @@ export interface ServiceRegistry {
 }
 
 export const createServiceRegistry = (): ServiceRegistry => {
-  const currency = 'USD';
+  const currency = 'XOF';
 
   return {
     cmsPage: createCMSPageService(),

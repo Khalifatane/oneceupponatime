@@ -15,7 +15,7 @@ interface OrderSummaryCardProps {
 
 export default function OrderSummaryCard({
   editCartLink,
-  currency = 'USD',
+  currency = 'XOF',
   shippingLabel = 'Free',
   estimatedTaxLabel = 'Calculated at checkout',
   promoPlaceholder = 'Enter promo code',

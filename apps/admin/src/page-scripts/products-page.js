@@ -31,9 +31,9 @@ function escapeHtml(value) {
 
 function formatMoney(value) {
   const amount = Number(value ?? 0);
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("fr-SN", {
     style: "currency",
-    currency: "USD",
+    currency: "XOF",
     maximumFractionDigits: 2,
   }).format(Number.isFinite(amount) ? amount : 0);
 }
@@ -41,7 +41,7 @@ function formatMoney(value) {
 function getProductRuntimeErrorMessage(error, fallback) {
   const message = String(error?.message || "");
   if (/products_runtime|schema cache|relation .* does not exist/i.test(message)) {
-    return "Product runtime table is missing. Run scripts/create-products-runtime-table.sql in Supabase, then try again.";
+    return "La table products_runtime est manquante. Executez scripts/create-products-runtime-table.sql dans Supabase, puis reessayez.";
   }
   return message ? `${fallback}: ${message}` : `${fallback}.`;
 }
@@ -57,6 +57,12 @@ function buildRuntimeLookupKey(product) {
 }
 
 function buildStockBadgeMarkup(stockState) {
+  const stockLabels = {
+    out_of_stock: "Rupture de stock",
+    low_stock: "Stock faible",
+    in_stock: "En stock",
+  };
+  const label = stockLabels[stockState.key] || stockState.label;
   const toneClass =
     stockState.key === "out_of_stock"
       ? "text-red-600"
@@ -70,7 +76,7 @@ function buildStockBadgeMarkup(stockState) {
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
-      ${escapeHtml(stockState.label)}
+      ${escapeHtml(label)}
       <span class="m859b f1ztf">(${stockState.stock})</span>
     </span>
   `;
@@ -98,11 +104,11 @@ function hydrateProductRow(row, product) {
   if (image) {
     if (product.imageUrl) {
       image.src = product.imageUrl;
-      image.alt = "Product Image";
+      image.alt = "Image du produit";
       image.classList.remove("hidden");
     } else {
       image.removeAttribute("src");
-      image.alt = "Product Image";
+      image.alt = "Image du produit";
     }
   }
 
@@ -178,7 +184,7 @@ function hydrateProductRow(row, product) {
 
   const downloadCta = dropdownMenu?.querySelector(".w-full.abuy9.aimp4.inline-flex");
   if (downloadCta) {
-    downloadCta.textContent = "View product";
+    downloadCta.textContent = "Voir le produit";
   }
 }
 
@@ -364,8 +370,8 @@ async function initProductsPage() {
       });
       setLiveStatus(
         products.length
-          ? `Live Sanity products loaded: ${products.length}`
-          : "Sanity is connected, but no products matched this view.",
+          ? `Produits Sanity charges: ${products.length}`
+          : "Sanity est connecte, mais aucun produit ne correspond a cette vue.",
         products.length ? "success" : "warning",
       );
 
@@ -385,7 +391,7 @@ async function initProductsPage() {
         setLiveStatus(
           getProductRuntimeErrorMessage(
             runtimeError,
-            "Live Sanity products loaded, but Supabase runtime could not be merged",
+            "Les produits Sanity sont charges, mais les donnees runtime Supabase n'ont pas pu etre fusionnees",
           ),
           "warning",
         );
@@ -422,7 +428,7 @@ async function initProductsPage() {
       const start = (safePage - 1) * PAGE_SIZE;
       const pageProducts = filteredProducts.slice(start, start + PAGE_SIZE);
 
-      title.textContent = `Products (${totalResults.toLocaleString()})`;
+      title.textContent = `Produits (${totalResults.toLocaleString()})`;
       count.textContent = String(totalResults);
       if (pageIndicators?.length >= 3) {
         pageIndicators[0].textContent = String(safePage);
@@ -435,7 +441,7 @@ async function initProductsPage() {
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="cti9j edpyz yymkp f1ztf c4t4j">
-              ${escapeHtml(query ? "No products match your current search." : "No products found for this tab yet.")}
+              ${escapeHtml(query ? "Aucun produit ne correspond a votre recherche." : "Aucun produit trouve pour cet onglet.")}
             </td>
           </tr>
         `;
@@ -447,7 +453,7 @@ async function initProductsPage() {
         );
         if (runtimeRows.length) {
           setLiveStatus(
-            "Live Sanity products loaded with Supabase runtime data.",
+            "Produits Sanity charges avec les donnees runtime Supabase.",
             "success",
           );
         }
@@ -458,8 +464,8 @@ async function initProductsPage() {
       console.error("Failed to render Sanity products", error);
       setLiveStatus(
         error?.message
-          ? `Live products failed to load: ${error.message}`
-          : "Live products failed to load.",
+          ? `Impossible de charger les produits live: ${error.message}`
+          : "Impossible de charger les produits live.",
         "error",
       );
       const panelConfig = panelMap.get(getCurrentTab());
@@ -522,19 +528,19 @@ async function initProductsPage() {
 
     const nextValue = availabilityInput.checked;
     availabilityInput.disabled = true;
-    setLiveStatus("Saving product availability...", "muted");
+    setLiveStatus("Enregistrement de la disponibilite du produit...", "muted");
 
     try {
       const runtime = await updateProductRuntimeAvailability(product, nextValue, {
         table: PRODUCT_RUNTIME_TABLE,
       });
       Object.assign(product, mergeProductWithRuntime(product, runtime));
-      setLiveStatus("Product availability saved.", "success");
+      setLiveStatus("Disponibilite du produit enregistree.", "success");
       await render();
     } catch (error) {
       availabilityInput.checked = !nextValue;
       setLiveStatus(
-        getProductRuntimeErrorMessage(error, "Availability update failed"),
+        getProductRuntimeErrorMessage(error, "Echec de la mise a jour de la disponibilite"),
         "error",
       );
     } finally {

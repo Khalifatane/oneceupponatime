@@ -97,11 +97,11 @@ export default function OrderConfirmationPage() {
               <span className="text-sm text-green-600 font-medium">{orderSummary.status}</span>
             </div>
             <div className="space-y-3 text-sm mb-6">
-              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>${orderSummary.subtotal}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>{orderSummary.subtotal} {orderSummary.currency}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="text-green-600">{orderSummary.shipping}</span></div>
               <div className="flex justify-between font-semibold text-base pt-3 border-t">
                 <span>Total</span>
-                <span>{orderSummary.currency === 'USD' && '$'}{orderSummary.total} {orderSummary.currency}</span>
+                <span>{orderSummary.total} {orderSummary.currency}</span>
               </div>
             </div>
             <div className="space-y-4">
@@ -112,7 +112,7 @@ export default function OrderConfirmationPage() {
                     <p className="font-medium">{item.name}</p>
                     <p className="text-gray-500">{item.color} / {item.size}</p>
                     <p className="text-gray-500">Qty: {item.quantity}</p>
-                    <p className="font-medium">${item.price}</p>
+                    <p className="font-medium">{item.price} {orderSummary.currency}</p>
                   </div>
                 </div>
               ))}

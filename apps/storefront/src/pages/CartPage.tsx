@@ -113,7 +113,7 @@ export default function CartPage() {
                   <div className="aspect-[3/4] bg-gray-100 rounded-lg mb-2" />
                   <p className="text-sm font-medium">{product.name}</p>
                   <p className="text-xs text-gray-500">{product.category}</p>
-                  <p className="text-sm font-medium mt-1">${product.price}</p>
+                  <p className="text-sm font-medium mt-1">{product.price} FCFA</p>
                 </Link>
               ))}
             </div>
@@ -125,7 +125,7 @@ export default function CartPage() {
           <OrderSummaryCard
             editCartLink="/cart"
             currency={orderSummary.currency}
-            estimatedTaxLabel="$0"
+            estimatedTaxLabel="0 FCFA"
             promoPlaceholder={orderSummary.promoCode.placeholder}
             promoButtonText={orderSummary.promoCode.buttonText}
           />

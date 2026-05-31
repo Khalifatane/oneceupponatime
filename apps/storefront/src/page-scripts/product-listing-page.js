@@ -46,7 +46,7 @@ function getProductCategory(product) {
 }
 
 function getProductPriceMarkup(product) {
-  const currency = product?.currency || "USD";
+  const currency = product?.currency || "XOF";
   const price = typeof product?.price === "number" ? product.price : 0;
   const nextPrice = formatPrice(price, currency);
 

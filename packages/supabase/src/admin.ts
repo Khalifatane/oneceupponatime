@@ -125,7 +125,7 @@ function normalizeOrder(row: any): SupabaseOrder {
     user_id: row.user_id ?? row.customer_id ?? null,
     total_amount: Number(row.total_amount ?? row.total ?? 0),
     status: row.status ?? 'pending',
-    currency: row.currency ?? 'USD',
+    currency: row.currency ?? 'XOF',
     items: row.items ?? row.order_items ?? [],
   };
 }

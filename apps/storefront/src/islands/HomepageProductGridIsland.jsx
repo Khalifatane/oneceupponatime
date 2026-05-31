@@ -26,17 +26,17 @@ const promoCards = [
 
 const PRODUCT_LIMIT = 10;
 
-function formatPrice(price, currency = "USD") {
+function formatPrice(price, currency = "XOF") {
   if (typeof price !== "number" || Number.isNaN(price)) return null;
 
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fr-SN", {
       style: "currency",
       currency,
       maximumFractionDigits: 0,
     }).format(price);
   } catch {
-    return `$${price}`;
+    return `${Number(price || 0).toLocaleString("fr-FR")} FCFA`;
   }
 }
 
@@ -56,7 +56,7 @@ function mapProductToCard(product, index) {
     price:
       typeof product?.price === "number"
         ? formatPrice(product.price, product.currency)
-        : "$0",
+        : "0 FCFA",
     reviewCount: 0,
     badge: null,
     href: product?.slug?.current
