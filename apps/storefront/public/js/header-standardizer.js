@@ -56,14 +56,8 @@
 
   function getServices() {
     if (!servicesPromise) {
-      servicesPromise = import("/src/services/supabase-service.ts")
-        .then(function (module) {
-          return module;
-        })
-        .catch(function (error) {
-          console.warn("Unable to load storefront services.", error);
-          return null;
-        });
+      servicesPromise = Promise.resolve(null);
+      console.warn("Services not available in static build.");
     }
 
     return servicesPromise;
@@ -71,14 +65,8 @@
 
   function getSupabaseClient() {
     if (!supabasePromise) {
-      supabasePromise = import("/src/lib/supabase.ts")
-        .then(function (module) {
-          return module.supabase;
-        })
-        .catch(function (error) {
-          console.warn("Unable to load Supabase client.", error);
-          return null;
-        });
+      supabasePromise = Promise.resolve(null);
+      console.warn("Supabase client not available in static build.");
     }
 
     return supabasePromise;
@@ -114,15 +102,8 @@
     }
 
     if (!commerceStorePromise) {
-      commerceStorePromise = import("/src/lib/store.js")
-        .then(function (module) {
-          commerceStore = module;
-          return module;
-        })
-        .catch(function (error) {
-          console.warn("Unable to load storefront commerce store.", error);
-          return null;
-        });
+      commerceStorePromise = Promise.resolve(null);
+      console.warn("Commerce store not available in static build.");
     }
 
     return commerceStorePromise;

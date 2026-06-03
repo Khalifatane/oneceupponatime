@@ -52,14 +52,8 @@
 
   function getServices() {
     if (!servicesPromise) {
-      servicesPromise = import(importBase + "/src/services/supabase-service.ts")
-        .then(function (module) {
-          return module;
-        })
-        .catch(function (error) {
-          console.warn("Unable to load storefront services.", error);
-          return null;
-        });
+      servicesPromise = Promise.resolve(null);
+      console.warn("Services not available in static build.");
     }
 
     return servicesPromise;
@@ -67,14 +61,8 @@
 
   function getSupabaseClient() {
     if (!supabasePromise) {
-      supabasePromise = import(importBase + "/src/lib/supabase.ts")
-        .then(function (module) {
-          return module.supabase;
-        })
-        .catch(function (error) {
-          console.warn("Unable to load Supabase client.", error);
-          return null;
-        });
+      supabasePromise = Promise.resolve(null);
+      console.warn("Supabase client not available in static build.");
     }
 
     return supabasePromise;
@@ -110,15 +98,8 @@
     }
 
     if (!commerceStorePromise) {
-      commerceStorePromise = import(importBase + "/src/lib/store.js")
-        .then(function (module) {
-          commerceStore = module;
-          return module;
-        })
-        .catch(function (error) {
-          console.warn("Unable to load storefront commerce store.", error);
-          return null;
-        });
+      commerceStorePromise = Promise.resolve(null);
+      console.warn("Commerce store not available in static build.");
     }
 
     return commerceStorePromise;
@@ -905,6 +886,74 @@
     ].join("");
   }
 
+  const sanityProjectId = "o85ja9mx";
+  const sanityDataset = "production";
+  const sanityApiVersion = "2024-01-01";
+
+  async function fetchSanityData(query, fallback) {
+    try {
+      const url = `https://${sanityProjectId}.api.sanity.io/v1/data/query/${sanityDataset}?query=${encodeURIComponent(query)}&apiVersion=${encodeURIComponent(sanityApiVersion)}`;
+      const response = await fetch(url, { credentials: "omit" });
+      if (!response.ok) {
+        return fallback;
+      }
+      const data = await response.json();
+      return data?.result ?? fallback;
+    } catch (error) {
+      console.warn("Unable to fetch data from Sanity.", error);
+      return fallback;
+    }
+  }
+
+  async function getSanityProducts(limit = 20, offset = 0) {
+    const query = `*[_type == "product"] | order(_createdAt desc)[${offset}...${offset + limit}] {
+      _id,
+      title,
+      slug,
+      description,
+      price,
+      originalPrice,
+      currency,
+      image { asset->{_id,url} },
+      images[] { asset->{_id,url} },
+      category->{_id,title,slug},
+      sku,
+      stock,
+      status,
+      isAvailable,
+      variants,
+      channels,
+      _createdAt,
+      _updatedAt
+    }`;
+    return await fetchSanityData(query, []);
+  }
+
+  async function getSanityProductBySlug(slug) {
+    if (!slug) return null;
+    const query = `*[_type == "product" && slug.current == ${JSON.stringify(slug)}][0] {
+      _id,
+      title,
+      slug,
+      description,
+      price,
+      originalPrice,
+      currency,
+      image { asset->{_id,url} },
+      images[] { asset->{_id,url} },
+      category->{_id,title,slug},
+      sku,
+      stock,
+      status,
+      isAvailable,
+      variants,
+      channels,
+      _createdAt,
+      _updatedAt
+    }`;
+    return await fetchSanityData(query, null);
+  }
+
   async function renderSanityProductCarousel() {
     if (!isPage("Cart.html")) return;
 
@@ -915,8 +964,7 @@
     if (!slides.length) return;
 
     try {
-      const sanityModule = await import("/src/services/sanity-service.ts");
-      const sanityProducts = await sanityModule.default.getProducts(slides.length, 0);
+      const sanityProducts = await getSanityProducts(slides.length, 0);
       if (!Array.isArray(sanityProducts) || !sanityProducts.length) return;
 
       slides.forEach(function (slide, index) {
@@ -1629,14 +1677,7 @@
 
     if (!slug) return;
 
-    import("/src/services/sanity-service.ts")
-      .then(function (module) {
-        if (!module || !module.sanityService || typeof module.sanityService.getProductBySlug !== "function") {
-          return null;
-        }
-
-        return module.sanityService.getProductBySlug(slug);
-      })
+    getSanityProductBySlug(slug)
       .then(function (product) {
         if (!product) return;
 
