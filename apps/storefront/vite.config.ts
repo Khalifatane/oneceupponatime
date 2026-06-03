@@ -199,11 +199,52 @@ function adminSoftMergePlugin(): Plugin {
   };
 }
 
+function headerStandardizerPlugin(): Plugin {
+  const standardizerPath = path.resolve(appRoot, "src", "header-standardizer.ts");
+  const standardizerUrl = "/js/header-standardizer.js";
+
+  return {
+    name: "siggistore-header-standardizer",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const requestUrl = req.url;
+        if (!requestUrl) {
+          next();
+          return;
+        }
+
+        const url = new URL(requestUrl, "http://127.0.0.1");
+        if (url.pathname !== standardizerUrl) {
+          next();
+          return;
+        }
+
+        try {
+          const transformed = await server.transformRequest(standardizerPath);
+          if (!transformed) {
+            next();
+            return;
+          }
+
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+          res.end(typeof transformed === "string" ? transformed : transformed.code);
+        } catch (error) {
+          next(error as Error);
+        }
+      });
+    },
+  };
+}
+
+const headerStandardizerEntry = path.resolve(appRoot, "src", "header-standardizer.ts");
+
 export default defineConfig({
   root: appRoot,
   envDir: workspaceRoot,
   publicDir: path.resolve(appRoot, "public"),
-  plugins: [react(), adminSoftMergePlugin()],
+  plugins: [react(), adminSoftMergePlugin(), headerStandardizerPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(appRoot, "src"),
@@ -227,7 +268,19 @@ export default defineConfig({
     outDir: path.resolve(appRoot, "dist"),
     emptyOutDir: false,
     rollupOptions: {
-      input: getHtmlInputs(appRoot),
+      input: {
+        ...getHtmlInputs(appRoot),
+        headerStandardizer: headerStandardizerEntry,
+      },
+      output: {
+        entryFileNames(chunkInfo) {
+          return chunkInfo.name === "headerStandardizer"
+            ? "js/header-standardizer.js"
+            : "assets/[name]-[hash].js";
+        },
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
+      },
     },
   },
 });
