@@ -1,0 +1,10 @@
+.git
+.turbo
+node_modules
+dist
+apps/*/dist
+apps/*/.turbo
+packages/*/node_modules
+*.log
+_tmp_*
+.tmp-*

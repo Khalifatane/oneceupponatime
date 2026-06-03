@@ -38,7 +38,8 @@ async function copyDirectory(sourcePath, destinationPath) {
 }
 
 function rewriteAdminHtml(html) {
-  return html
+  return rewriteStaticLinks(html)
+    .replace(/href=(["'])\/products\.html\1/g, "href=$1/admin/products.html$1")
     .replace(/(["'(=])\/preline\.co\//g, "$1/admin/preline.co/")
     .replace(/(["'(=])\/fonts\.googleapis\.com\//g, "$1/admin/fonts.googleapis.com/")
     .replace(/(["'(=])\/fonts\.gstatic\.com\//g, "$1/admin/fonts.gstatic.com/")
@@ -59,7 +60,23 @@ function rewriteAdminHtml(html) {
     .replace(/\burl\((["']?)\/images\//g, "url($1/admin/images/");
 }
 
-async function rewriteHtmlFiles(rootPath) {
+function rewriteStorefrontHtml(html) {
+  return rewriteStaticLinks(html);
+}
+
+function rewriteStaticLinks(html) {
+  return html
+    .replace(/href=(["'])\.\/([^"']+\.html)(#?)\1/g, "href=$1/$2$3$1")
+    .replace(/href=(["'])\.\.\/\.\.\/index\.html\1/g, "href=$1/index.html$1")
+    .replace(/href=(["'])\.\.\/\.\.\/help\.html\1/g, "href=$1/index.html$1")
+    .replace(/href=(["'])\.\.\/\.\.\/product-page\.html\1/g, "href=$1/Product Detail.html$1")
+    .replace(/href=(["'])\.\.\/\.\.\/listing-grid\.html\1/g, "href=$1/Product Listing.html$1")
+    .replace(/href=(["'])\.\.\/\.\.\/listing-grid-with-categories\.html\1/g, "href=$1/Product Listing.html$1")
+    .replace(/href=(["'])\/My%20Commandes\.html\1/g, "href=$1/My Orders.html$1")
+    .replace(/href=(["'])\/My Commandes\.html\1/g, "href=$1/My Orders.html$1");
+}
+
+async function rewriteHtmlFiles(rootPath, transformHtml) {
   const entries = await fs.readdir(rootPath, { withFileTypes: true });
 
   await Promise.all(
@@ -67,7 +84,7 @@ async function rewriteHtmlFiles(rootPath) {
       const entryPath = path.join(rootPath, entry.name);
 
       if (entry.isDirectory()) {
-        await rewriteHtmlFiles(entryPath);
+        await rewriteHtmlFiles(entryPath, transformHtml);
         return;
       }
 
@@ -76,7 +93,7 @@ async function rewriteHtmlFiles(rootPath) {
       }
 
       const html = await fs.readFile(entryPath, "utf8");
-      await fs.writeFile(entryPath, rewriteAdminHtml(html), "utf8");
+      await fs.writeFile(entryPath, transformHtml(html), "utf8");
     }),
   );
 }
@@ -88,7 +105,8 @@ async function main() {
   await resetDirectory(mergedDist);
   await copyDirectory(storefrontDist, mergedDist);
   await copyDirectory(adminDist, mergedAdminDist);
-  await rewriteHtmlFiles(mergedAdminDist);
+  await rewriteHtmlFiles(mergedDist, rewriteStorefrontHtml);
+  await rewriteHtmlFiles(mergedAdminDist, rewriteAdminHtml);
 }
 
 main().catch((error) => {

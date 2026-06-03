@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs/promises";
+import { readdirSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 import { defineConfig, normalizePath, type Plugin, type ViteDevServer } from "vite";
 
@@ -9,6 +10,17 @@ const adminPublicRoot = path.resolve(adminRoot, "public");
 const packagesRoot = path.resolve(__dirname, "..", "..", "packages");
 const workspaceRoot = path.resolve(__dirname, "..", "..");
 const adminPrefix = "/admin";
+
+function getHtmlInputs(root: string) {
+  return Object.fromEntries(
+    readdirSync(root)
+      .filter((fileName) => fileName.endsWith(".html"))
+      .map((fileName) => [
+        path.basename(fileName, ".html").replace(/[^a-zA-Z0-9_$]/g, "_"),
+        path.resolve(root, fileName),
+      ]),
+  );
+}
 
 function toViteFsPath(filePath: string) {
   return `/@fs/${normalizePath(filePath)}`;
@@ -215,9 +227,7 @@ export default defineConfig({
     outDir: path.resolve(appRoot, "dist"),
     emptyOutDir: false,
     rollupOptions: {
-      input: {
-        main: path.resolve(appRoot, "index.html"),
-      },
+      input: getHtmlInputs(appRoot),
     },
   },
 });

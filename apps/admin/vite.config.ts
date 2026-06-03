@@ -1,5 +1,6 @@
 import path from "node:path";
 import { createRequire } from "node:module";
+import { readdirSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -11,6 +12,17 @@ const sanityClientRoot = path.dirname(require.resolve("@sanity/client/package.js
 const sanityClientEntry = path.join(sanityClientRoot, "dist", "index.browser.js");
 const sanityClientCsmEntry = path.join(sanityClientRoot, "dist", "csm.js");
 const sanityImageUrlEntry = require.resolve("@sanity/image-url");
+
+function getHtmlInputs(root: string) {
+  return Object.fromEntries(
+    readdirSync(root)
+      .filter((fileName) => fileName.endsWith(".html"))
+      .map((fileName) => [
+        path.basename(fileName, ".html").replace(/[^a-zA-Z0-9_$]/g, "_"),
+        path.resolve(root, fileName),
+      ]),
+  );
+}
 
 export default defineConfig({
   root: appRoot,
@@ -48,13 +60,7 @@ export default defineConfig({
     cssMinify: false,
     emptyOutDir: false,
     rollupOptions: {
-      input: {
-        main: path.resolve(appRoot, "index.html"),
-        discounts: path.resolve(appRoot, "discounts.html"),
-        orders: path.resolve(appRoot, "orders.html"),
-        products: path.resolve(appRoot, "products.html"),
-        spa: path.resolve(appRoot, "spa.html"),
-      },
+      input: getHtmlInputs(appRoot),
     },
   },
   base: "/admin/",
